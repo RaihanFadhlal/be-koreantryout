@@ -7,15 +7,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Getter
 @Setter
-@AllArgsConstructor
+@Getter
 @NoArgsConstructor
+@AllArgsConstructor
 @Builder
-public class LoginRequest {
+public class UpdateProfileRequest {
+
+    @NotBlank(message = "Full name is required")
+    private String fullName;
     @NotBlank(message = "Username is required")
     private String username;
-
-    @NotBlank(message = "Password is required")
-    private String password;
 }
