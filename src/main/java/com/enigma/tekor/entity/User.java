@@ -51,6 +51,9 @@ public class User {
     @Column(name = "is_verified")
     private Boolean isVerified = false;
 
+    @Column(name = "image_url")
+    private String imageUrl = null;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Date createdAt;
