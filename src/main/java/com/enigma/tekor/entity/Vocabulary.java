@@ -2,6 +2,7 @@ package com.enigma.tekor.entity;
 
 import java.util.UUID;
 
+import com.enigma.tekor.constant.VocabularyCategories;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -30,6 +31,6 @@ public class Vocabulary {
     @Column(nullable = false)
     private String translation;
 
-    private String romanization;
-    
+    @Column(name = "vocabulary_category", nullable = false)
+    private VocabularyCategories vocabularyCategories;
 }
