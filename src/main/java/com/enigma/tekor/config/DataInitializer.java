@@ -14,38 +14,32 @@ import lombok.RequiredArgsConstructor;
 
 @Configuration
 @RequiredArgsConstructor
-public class DataInitializer {
+public class DataInitializer implements CommandLineRunner {
     private final UserRepository userRepository;
     private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
 
-    @Bean
-    public CommandLineRunner initDatabase(){
-        return args -> {
-            Role adminRole = roleService.getOrSave("ROLE_ADMIN");
-            Role userRole = roleService.getOrSave("ROLE_USER");
+    @Override
+    public void run(String... args) throws Exception {
+        Role adminRole = roleService.getOrSave("ROLE_ADMIN");
+        Role userRole = roleService.getOrSave("ROLE_USER");
 
-            if (userRepository.findByEmail("admintekor@gmail.com").isEmpty()) {
-                User admin = new User();
-                admin.setFullName("Admin Tekor");
-                admin.setUsername("admin");
-                admin.setEmail("admintekor@tekor.com");
-                admin.setPassword(passwordEncoder.encode("password123"));
-                admin.setRole(adminRole);
-                admin.setIsVerified(true);
-                userRepository.save(admin);
-            }
+        User admin = userRepository.findByEmail("admintekor@tekor.com").orElseGet(User::new);
+        admin.setFullName("Admin Tekor");
+        admin.setUsername("admin");
+        admin.setEmail("admintekor@tekor.com");
+        admin.setPassword(passwordEncoder.encode("password123"));
+        admin.setRole(adminRole);
+        admin.setIsVerified(true);
+        userRepository.save(admin);
 
-            if (userRepository.findByEmail("usertekor@gmail.com").isEmpty()) {
-                User user = new User();
-                user.setFullName("User Tekor");
-                user.setUsername("user");
-                user.setEmail("usertekor@gmail.com");
-                user.setPassword(passwordEncoder.encode("password"));
-                user.setRole(userRole);
-                user.setIsVerified(true);
-                userRepository.save(user);
-            }
-        };
+        User user = userRepository.findByEmail("usertekor@gmail.com").orElseGet(User::new);
+        user.setFullName("User Tekor");
+        user.setUsername("user");
+        user.setEmail("usertekor@gmail.com");
+        user.setPassword(passwordEncoder.encode("password"));
+        user.setRole(userRole);
+        user.setIsVerified(true);
+        userRepository.save(user);
     }
 }
