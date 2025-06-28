@@ -111,7 +111,7 @@ Endpoint yang berhubungan dengan registrasi, login, dan keamanan akun.
 
 ### 1.3 Change Password
 
-**Endpoint**: `POST /auth/change-password`
+**Endpoint**: `POST auth/change-password`
 **Authorization**: Bearer Token (User)
 **Description**: Memungkinkan pengguna untuk mengubah password mereka. Memerlukan password saat ini untuk verifikasi keamanan.
 
