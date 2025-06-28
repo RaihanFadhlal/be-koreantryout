@@ -106,4 +106,15 @@ public class JwtUtil {
                 .withIssuer(appName)
                 .build();
     }
+
+    public boolean verifyToken(String token) {
+        try {
+            Algorithm algorithm = Algorithm.HMAC256(jwtSecret.getBytes(StandardCharsets.UTF_8));
+            JWTVerifier verifier = JWT.require(algorithm).withIssuer(appName).build();
+            verifier.verify(token);
+            return true;
+        } catch (JWTVerificationException e) {
+            return false;
+        }
+    }
 }
