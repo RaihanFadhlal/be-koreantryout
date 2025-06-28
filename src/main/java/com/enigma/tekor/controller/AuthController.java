@@ -4,6 +4,8 @@ import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,13 +13,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.enigma.tekor.dto.request.ChangePasswordRequest;
 import com.enigma.tekor.dto.request.LoginRequest;
 import com.enigma.tekor.dto.request.RegisterRequest;
 import com.enigma.tekor.dto.response.CommonResponse;
 import com.enigma.tekor.dto.response.LoginResponse;
 import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.service.AuthService;
+import com.enigma.tekor.service.UserService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -26,6 +31,7 @@ import lombok.RequiredArgsConstructor;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
 
     @PostMapping("/register")
     public ResponseEntity<CommonResponse<UserResponse>> registerUser(@RequestBody RegisterRequest request) {
@@ -64,5 +70,20 @@ public class AuthController {
                 .build();
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/change-password")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<CommonResponse<String>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        userService.changePassword(getCurrentUserId(), request);
+        return ResponseEntity.ok(CommonResponse.<String>builder()
+            .status("success")
+            .message("Password updated successfully.")
+            .build());
+    }
+
+    private String getCurrentUserId() {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        return userService.getUserIdByUsername(username);
     }
 }
