@@ -5,14 +5,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -45,5 +40,11 @@ public class TestPackage {
     @Column(name = "created_at", updatable = false)
     private Date createdAt;
 
+    @ManyToMany
+    @JoinTable(
+        name = "test_package_questions",
+        joinColumns = @JoinColumn(name = "test_package_id"),
+        inverseJoinColumns = @JoinColumn(name = "question_id")
+    )
     private List<Question> questions;
 }

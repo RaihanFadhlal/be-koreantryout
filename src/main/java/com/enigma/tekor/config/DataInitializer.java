@@ -1,6 +1,7 @@
 package com.enigma.tekor.config;
 
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -18,6 +19,7 @@ public class DataInitializer {
     private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
 
+    @Bean
     public CommandLineRunner initDatabase(){
         return args -> {
             Role adminRole = roleService.getOrSave("ROLE_ADMIN");
