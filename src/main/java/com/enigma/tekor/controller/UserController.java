@@ -24,46 +24,51 @@ import com.enigma.tekor.util.JwtUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
-
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
 public class UserController {
-    
-    private final UserService userService;
-    private final JwtUtil jwtUtil; 
 
+    private final UserService userService;
+    private final JwtUtil jwtUtil;
+
+    /**
+     * Get current user profile
+     */
     @GetMapping("/me")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<ProfileResponse> getMyProfile(
-        @RequestHeader("Authorization") String token) {
-    
-    String userId = jwtUtil.getUserInfoByToken(token.replace("Bearer ", "")).get("userId");
-    ProfileResponse profile = userService.getProfileById(userId);
-    
-    return ResponseEntity.ok(profile);
-}
+            @RequestHeader("Authorization") String token) {
 
+        String userId = jwtUtil.getUserInfoByToken(token.replace("Bearer ", "")).get("userId");
+        ProfileResponse profile = userService.getProfileById(userId);
+
+        return ResponseEntity.ok(profile);
+    }
+
+    /**
+     * Update profile data
+     */
     @PatchMapping("/me")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<CommonResponse<ProfileResponse>> updateProfile(
-        @Valid @RequestBody UpdateProfileRequest request) {
+            @Valid @RequestBody UpdateProfileRequest request) {
 
-    ProfileResponse updatedProfile = userService.updateProfile(
-            getCurrentUserId(), 
-            request);
+        ProfileResponse updatedProfile = userService.updateProfile(
+                getCurrentUserId(),
+                request);
 
-    return ResponseEntity.ok(CommonResponse.<ProfileResponse>builder()
-        .status("success")
-        .message("Profile updated successfully")
-        .data(updatedProfile)
-        .build());
-}
+        return ResponseEntity.ok(CommonResponse.<ProfileResponse>builder()
+                .status("success")
+                .message("Profile updated successfully")
+                .data(updatedProfile)
+                .build());
+    }
 
-    @PostMapping(
-        value = "/me/avatar", 
-        consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
+    /**
+     * Update profile picture
+     */
+    @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
     public ResponseEntity<CommonResponse<ProfilePictureResponse>> updateProfilePicture(
             @RequestParam("avatar") MultipartFile file) {
@@ -84,6 +89,6 @@ public class UserController {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         return userService.getUserIdByUsername(username);
     }
-    
+
 }
 
