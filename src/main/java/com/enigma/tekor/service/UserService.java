@@ -2,6 +2,8 @@ package com.enigma.tekor.service;
 
 
 import org.springframework.web.multipart.MultipartFile;
+
+import com.enigma.tekor.dto.request.ChangePasswordRequest;
 import com.enigma.tekor.dto.request.UpdateProfileRequest;
 import com.enigma.tekor.dto.response.ProfilePictureResponse;
 import com.enigma.tekor.dto.response.ProfileResponse;
@@ -12,5 +14,6 @@ public interface UserService {
     ProfileResponse updateProfile(String userId, UpdateProfileRequest request);
     String getUserIdByUsername(String username);
     ProfilePictureResponse updateProfilePicture(String userId, MultipartFile file);
+    void changePassword(String userId, ChangePasswordRequest request);
     
 }
