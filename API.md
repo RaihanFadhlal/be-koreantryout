@@ -77,7 +77,7 @@ Endpoint yang berhubungan dengan registrasi, login, dan keamanan akun.
 
 ```json
 {
-  "identifier": "suksespmi25",
+  "username": "suksespmi25",
   "password": "PasswordSuperKuat123"
 }
 ```
@@ -104,7 +104,7 @@ Endpoint yang berhubungan dengan registrasi, login, dan keamanan akun.
 
 #### Error Responses
 
-* `400 Bad Request`: Field `identifier` atau `password` kosong.
+* `400 Bad Request`: Field `username` atau `password` kosong.
 * `401 Unauthorized`: Kredensial tidak valid.
 
 ---
@@ -265,6 +265,4 @@ Tidak memerlukan body.
 ```
 
 ---
-
-Jika kamu ingin file ini dalam bentuk `.md` untuk diunduh, beritahu saya agar bisa saya siapkan!
 ```
