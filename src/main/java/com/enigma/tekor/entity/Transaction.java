@@ -4,8 +4,8 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+import com.enigma.tekor.constant.TransactionStatus;
 import org.hibernate.annotations.CreationTimestamp;
-import org.springframework.transaction.TransactionStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
