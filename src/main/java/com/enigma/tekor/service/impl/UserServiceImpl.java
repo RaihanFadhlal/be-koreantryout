@@ -6,6 +6,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.ZoneId;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -24,36 +25,36 @@ import com.enigma.tekor.exception.InvalidFileException;
 import com.enigma.tekor.exception.UserNotFoundException;
 import com.enigma.tekor.exception.UsernameAlreadyExistsException;
 import com.enigma.tekor.repository.UserRepository;
+import com.enigma.tekor.service.CloudinaryService;
 import com.enigma.tekor.service.UserService;
 
 import lombok.RequiredArgsConstructor;
-
-
+import lombok.extern.java.Log;
 
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
-    
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-       
-    @Value("${file.upload-dir}") 
+    private final CloudinaryService cloudinaryService;
+
+    @Value("${file.upload-dir}")
     private String uploadDir;
 
-       @Override
-       public ProfileResponse getProfileById(String userId) {
+    @Override
+    public ProfileResponse getProfileById(String userId) {
         User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
-        
+
         return convertToProfileResponse(user);
     }
-    
+
     @Override
     public ProfileResponse updateProfile(String userId, UpdateProfileRequest request) {
         User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-       
         if (!user.getUsername().equals(request.getUsername())) {
             userRepository.findByUsername(request.getUsername())
                     .ifPresent(u -> {
@@ -72,44 +73,37 @@ public class UserServiceImpl implements UserService {
     public String getUserIdByUsername(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email))
-                .getId().toString(); 
-    }  
-    
+                .getId().toString();
+    }
 
-   
     @Override
     public ProfilePictureResponse updateProfilePicture(String userId, MultipartFile file) {
-       
         validateImageFile(file);
 
-      
-        String fileName = "user_" + userId + "_" + System.currentTimeMillis() +
-                getFileExtension(file.getOriginalFilename());
-
-        
-        String relativePath = "/profile-pictures/" + fileName;
-        Path destination = Paths.get(uploadDir + relativePath);
-
         try {
-            Files.createDirectories(destination.getParent());
-            Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
-
-            
             User user = userRepository.findById(UUID.fromString(userId))
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-            
-            if (user.getImageUrl() != null) {
-                Files.deleteIfExists(Paths.get(uploadDir + user.getImageUrl()));
+            if (user.getImageUrl() != null && !user.getImageUrl().isEmpty()) {
+                try {
+                    String publicId = extractPublicIdFromUrl(user.getImageUrl());
+                    cloudinaryService.delete(publicId);
+                } catch (Exception e) {
+                    System.err.println(e.getMessage());
+                }
             }
 
-            user.setImageUrl(relativePath);
+            Map<?, ?> uploadResult = cloudinaryService.upload(file);
+
+            String newImageUrl = (String) uploadResult.get("secure_url");
+
+            user.setImageUrl(newImageUrl);
             userRepository.save(user);
 
-            return new ProfilePictureResponse(relativePath);
+            return new ProfilePictureResponse(newImageUrl);
 
-        } catch (IOException e) {
-            throw new FileStorageException("Failed to store file: " + e.getMessage());
+        } catch (Exception e) {
+            throw new BadRequestException("Failed to update profile picture: " + e.getMessage());
         }
     }
 
@@ -130,7 +124,6 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
     }
 
-    
     private ProfileResponse convertToProfileResponse(User user) {
         return ProfileResponse.builder()
                 .id(user.getId())
@@ -155,8 +148,9 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    
-    private String getFileExtension(String filename) {
-        return filename.substring(filename.lastIndexOf("."));
+    private String extractPublicIdFromUrl(String imageUrl) {
+        String[] parts = imageUrl.split("/");
+        String lastPart = parts[parts.length - 1];
+        return lastPart.substring(0, lastPart.lastIndexOf('.'));
     }
 }

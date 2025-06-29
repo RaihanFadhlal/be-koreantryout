@@ -81,6 +81,7 @@ public class AuthServiceImpl implements AuthService {
 
         String verificationUrl = baseUrl + verificationPath + "?userId=" + newUser.getId();
         String emailBody = "<h1>Verifikasi Email - Aplikasi Tekor</h1>"
+                + "<p>Halo <b>" + newUser.getUsername() + "</b>,</p>"
                 + "<p>Terima kasih telah mendaftar. Silakan klik tautan di bawah ini untuk memverifikasi alamat email Anda:</p>"
                 + "<a href=\"" + verificationUrl
                 + "\" style=\"background-color:#008CBA;color:white;padding:15px 25px;text-align:center;text-decoration:none;display:inline-block;border-radius:8px;\">Verifikasi Email Saya</a>"

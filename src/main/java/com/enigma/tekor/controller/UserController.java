@@ -33,9 +33,6 @@ public class UserController {
         private final UserService userService;
         private final JwtUtil jwtUtil;
 
-        /**
-         * Get current user profile
-         */
         @GetMapping("/me")
         @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
         public ResponseEntity<ProfileResponse> getMyProfile(
@@ -47,9 +44,6 @@ public class UserController {
                 return ResponseEntity.ok(profile);
         }
 
-        /**
-         * Update profile data
-         */
         @PatchMapping("/me")
         @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
         public ResponseEntity<CommonResponse<ProfileResponse>> updateProfile(
@@ -66,9 +60,6 @@ public class UserController {
                                 .build());
         }
 
-        /**
-         * Update profile picture
-         */
         @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
         public ResponseEntity<CommonResponse<ProfilePictureResponse>> updateProfilePicture(
