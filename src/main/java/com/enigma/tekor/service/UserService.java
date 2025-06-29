@@ -9,11 +9,9 @@ import com.enigma.tekor.dto.response.ProfilePictureResponse;
 import com.enigma.tekor.dto.response.ProfileResponse;
 
 public interface UserService {
-    
     ProfileResponse getProfileById(String userId);
     ProfileResponse updateProfile(String userId, UpdateProfileRequest request);
     String getUserIdByUsername(String username);
     ProfilePictureResponse updateProfilePicture(String userId, MultipartFile file);
     void changePassword(String userId, ChangePasswordRequest request);
-    
 }

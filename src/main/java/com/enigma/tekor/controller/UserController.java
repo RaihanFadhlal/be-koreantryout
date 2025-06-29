@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.enigma.tekor.dto.request.ChangePasswordRequest;
 import com.enigma.tekor.dto.request.UpdateProfileRequest;
 import com.enigma.tekor.dto.response.CommonResponse;
 import com.enigma.tekor.dto.response.ProfilePictureResponse;
@@ -29,66 +30,75 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
-    private final JwtUtil jwtUtil;
+        private final UserService userService;
+        private final JwtUtil jwtUtil;
 
-    /**
-     * Get current user profile
-     */
-    @GetMapping("/me")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<ProfileResponse> getMyProfile(
-            @RequestHeader("Authorization") String token) {
+        /**
+         * Get current user profile
+         */
+        @GetMapping("/me")
+        @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+        public ResponseEntity<ProfileResponse> getMyProfile(
+                        @RequestHeader("Authorization") String token) {
 
-        String userId = jwtUtil.getUserInfoByToken(token.replace("Bearer ", "")).get("userId");
-        ProfileResponse profile = userService.getProfileById(userId);
+                String userId = jwtUtil.getUserInfoByToken(token.replace("Bearer ", "")).get("userId");
+                ProfileResponse profile = userService.getProfileById(userId);
 
-        return ResponseEntity.ok(profile);
-    }
+                return ResponseEntity.ok(profile);
+        }
 
-    /**
-     * Update profile data
-     */
-    @PatchMapping("/me")
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<CommonResponse<ProfileResponse>> updateProfile(
-            @Valid @RequestBody UpdateProfileRequest request) {
+        /**
+         * Update profile data
+         */
+        @PatchMapping("/me")
+        @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+        public ResponseEntity<CommonResponse<ProfileResponse>> updateProfile(
+                        @Valid @RequestBody UpdateProfileRequest request) {
 
-        ProfileResponse updatedProfile = userService.updateProfile(
-                getCurrentUserId(),
-                request);
+                ProfileResponse updatedProfile = userService.updateProfile(
+                                getCurrentUserId(),
+                                request);
 
-        return ResponseEntity.ok(CommonResponse.<ProfileResponse>builder()
-                .status("success")
-                .message("Profile updated successfully")
-                .data(updatedProfile)
-                .build());
-    }
+                return ResponseEntity.ok(CommonResponse.<ProfileResponse>builder()
+                                .status("success")
+                                .message("Profile updated successfully")
+                                .data(updatedProfile)
+                                .build());
+        }
 
-    /**
-     * Update profile picture
-     */
-    @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<CommonResponse<ProfilePictureResponse>> updateProfilePicture(
-            @RequestParam("avatar") MultipartFile file) {
+        /**
+         * Update profile picture
+         */
+        @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+        public ResponseEntity<CommonResponse<ProfilePictureResponse>> updateProfilePicture(
+                        @RequestParam("avatar") MultipartFile file) {
 
-        ProfilePictureResponse response = userService.updateProfilePicture(
-                getCurrentUserId(),
-                file);
+                ProfilePictureResponse response = userService.updateProfilePicture(
+                                getCurrentUserId(),
+                                file);
 
-        return ResponseEntity.ok(
-                CommonResponse.<ProfilePictureResponse>builder()
-                        .status("success")
-                        .message("Profile picture updated successfully")
-                        .data(response)
-                        .build());
-    }
+                return ResponseEntity.ok(
+                                CommonResponse.<ProfilePictureResponse>builder()
+                                                .status("success")
+                                                .message("Profile picture updated successfully")
+                                                .data(response)
+                                                .build());
+        }
 
-    private String getCurrentUserId() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userService.getUserIdByUsername(username);
-    }
+        private String getCurrentUserId() {
+                String username = SecurityContextHolder.getContext().getAuthentication().getName();
+                return userService.getUserIdByUsername(username);
+        }
 
+        @PostMapping("/change-password")
+        @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+        public ResponseEntity<CommonResponse<String>> changePassword(
+                        @Valid @RequestBody ChangePasswordRequest request) {
+                userService.changePassword(getCurrentUserId(), request);
+                return ResponseEntity.ok(CommonResponse.<String>builder()
+                                .status("success")
+                                .message("Password updated successfully.")
+                                .build());
+        }
 }
-

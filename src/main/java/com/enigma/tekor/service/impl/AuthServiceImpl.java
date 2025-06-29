@@ -1,7 +1,10 @@
 package com.enigma.tekor.service.impl;
 
+import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -13,15 +16,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.enigma.tekor.dto.request.ForgotPasswordRequest;
 import com.enigma.tekor.dto.request.LoginRequest;
 import com.enigma.tekor.dto.request.RegisterRequest;
+import com.enigma.tekor.dto.request.ResetPasswordRequest;
 import com.enigma.tekor.dto.response.LoginResponse;
 import com.enigma.tekor.dto.response.TokenResponse;
 import com.enigma.tekor.dto.response.UserLoginInfo;
 import com.enigma.tekor.dto.response.UserResponse;
+import com.enigma.tekor.entity.PasswordResetToken;
 import com.enigma.tekor.entity.Role;
 import com.enigma.tekor.entity.User;
 import com.enigma.tekor.exception.BadRequestException;
+import com.enigma.tekor.repository.PasswordResetTokenRepository;
 import com.enigma.tekor.repository.UserRepository;
 import com.enigma.tekor.service.AuthService;
 import com.enigma.tekor.service.EmailService;
@@ -40,6 +47,14 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
+
+    private final PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Value("${app.base-url}")
+    private String baseUrl;
+
+    @Value("${app.verification-path}")
+    private String verificationPath;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -64,7 +79,7 @@ public class AuthServiceImpl implements AuthService {
 
         userRepository.save(newUser);
 
-        String verificationUrl = "http://localhost:8081/api/auth/verify?userId=" + newUser.getId();
+        String verificationUrl = baseUrl + verificationPath + "?userId=" + newUser.getId();
         String emailBody = "<h1>Verifikasi Email - Aplikasi Tekor</h1>"
                 + "<p>Terima kasih telah mendaftar. Silakan klik tautan di bawah ini untuk memverifikasi alamat email Anda:</p>"
                 + "<a href=\"" + verificationUrl
@@ -140,4 +155,52 @@ public class AuthServiceImpl implements AuthService {
         return "Akun Anda telah berhasil diverifikasi! Sekarang Anda dapat melakukan login.";
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void requestPasswordReset(ForgotPasswordRequest request) {
+        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+
+            String token = UUID.randomUUID().toString();
+
+            PasswordResetToken resetToken = PasswordResetToken.builder()
+                    .token(token)
+                    .user(user)
+                    .expiryDate(LocalDateTime.now().plusMinutes(15)) // Token valid selama 15 menit
+                    .build();
+            passwordResetTokenRepository.save(resetToken);
+
+            String resetUrl = baseUrl + "/reset-password?token=" + token; 
+            String emailBody = "<h1>Reset Password</h1>"
+                    + "<p>Anda meminta untuk mereset password Anda. Klik link di bawah untuk melanjutkan:</p>"
+                    + "<a href=\"" + resetUrl + "\">Reset Password Saya</a>"
+                    + "<p>Link ini hanya valid selama 15 menit. Jika Anda tidak merasa meminta ini, abaikan email ini.</p>";
+
+            emailService.sendEmail(user.getEmail(), "Permintaan Reset Password", emailBody);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void resetPassword(ResetPasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new BadRequestException("Password baru dan konfirmasi password tidak cocok.");
+        }
+
+        PasswordResetToken token = passwordResetTokenRepository.findByToken(request.getToken())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token reset tidak valid."));
+
+        if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
+            passwordResetTokenRepository.delete(token); // Hapus token yang sudah expired
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token reset sudah kedaluwarsa.");
+        }
+
+        User user = token.getUser();
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        passwordResetTokenRepository.delete(token);
+    }
 }
