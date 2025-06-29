@@ -19,13 +19,6 @@ public class EmailServiceImpl implements EmailService {
     private final JavaMailSender javaMailSender;
     private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
 
-    /**
-     * Sends an HTML-formatted email.
-     *
-     * @param to The recipient's email address.
-     * @param subject The subject of the email.
-     * @param body The HTML content of the email.
-     */
     @Override
     public void sendEmail(String to, String subject, String body) {
         try {
