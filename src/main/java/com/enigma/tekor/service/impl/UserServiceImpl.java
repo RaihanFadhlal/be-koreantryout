@@ -9,7 +9,6 @@ import java.time.ZoneId;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -26,6 +25,7 @@ import com.enigma.tekor.exception.UserNotFoundException;
 import com.enigma.tekor.exception.UsernameAlreadyExistsException;
 import com.enigma.tekor.repository.UserRepository;
 import com.enigma.tekor.service.UserService;
+
 import lombok.RequiredArgsConstructor;
 
 
@@ -159,7 +159,4 @@ public class UserServiceImpl implements UserService {
     private String getFileExtension(String filename) {
         return filename.substring(filename.lastIndexOf("."));
     }
-    
-
-    
 }
