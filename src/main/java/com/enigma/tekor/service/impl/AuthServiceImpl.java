@@ -142,18 +142,16 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public String verifyEmail(UUID userId) {
+    public void verifyEmail(UUID userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pengguna tidak ditemukan"));
 
         if (Boolean.TRUE.equals(user.getIsVerified())) {
-            return "Akun Anda sudah pernah diverifikasi sebelumnya.";
+            throw new BadRequestException("Akun Anda sudah pernah diverifikasi sebelumnya.");
         }
         
         user.setIsVerified(true);
         userRepository.save(user);
-        
-        return "Akun Anda telah berhasil diverifikasi! Sekarang Anda dapat melakukan login.";
     }
 
     @Override

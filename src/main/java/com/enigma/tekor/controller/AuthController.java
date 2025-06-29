@@ -57,16 +57,11 @@ public class AuthController {
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<CommonResponse<String>> verifyEmail(@RequestParam("userId") UUID userId) {
-        String message = authService.verifyEmail(userId);
-
-        CommonResponse<String> response = CommonResponse.<String>builder()
-                .status("success")
-                .message(message)
-                .data(null)
+    public ResponseEntity<Void> verifyEmail(@RequestParam("userId") UUID userId) {
+        authService.verifyEmail(userId);
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .header("Location", "http://localhost:5173/login")
                 .build();
-
-        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/forgot-password")

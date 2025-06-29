@@ -12,7 +12,7 @@ import com.enigma.tekor.dto.response.UserResponse;
 public interface AuthService {
     UserResponse register(RegisterRequest registerRequest);
     LoginResponse login (LoginRequest loginRequest);
-    String verifyEmail(UUID userId);
+    void verifyEmail(UUID userId);
     void requestPasswordReset(ForgotPasswordRequest forgotPasswordRequest);
     void resetPassword(ResetPasswordRequest resetPasswordRequest);
 }
