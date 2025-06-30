@@ -13,5 +13,4 @@ import lombok.Setter;
 @Builder
 public class ProfilePictureResponse {
     private String imageUrl;
-    
 }

@@ -25,7 +25,6 @@ public class OptionServiceImpl implements OptionService {
 
       @Override
     public Option create(Option option) {
-        // Validate that the question exists
         if (!questionRepository.existsById(option.getQuestion().getId())) {
             throw new EntityNotFoundException("Question not found with id: " + option.getQuestion().getId());
         }

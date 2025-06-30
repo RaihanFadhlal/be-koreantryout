@@ -7,11 +7,9 @@ import com.enigma.tekor.constant.QuestionType;
 import com.enigma.tekor.entity.Question;
 
 public interface QuestionService {
-
     Question create(Question question);
     Question getById(UUID id);
     List<Question> getAll();
     List<Question> getByCategory(QuestionType category);
     void delete(UUID id);
-    
 }
