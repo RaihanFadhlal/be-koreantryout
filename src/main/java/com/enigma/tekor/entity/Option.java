@@ -21,7 +21,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
-@Table(name = "questions")
+@Table(name = "options")
 public class Option {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
