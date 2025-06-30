@@ -5,6 +5,8 @@ import java.util.UUID;
 import com.enigma.tekor.constant.VocabularyCategories;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -31,6 +33,10 @@ public class Vocabulary {
     @Column(nullable = false)
     private String translation;
 
+    @Column(nullable = false)
+    private String romanization;
+
+    @Enumerated(EnumType.STRING)
     @Column(name = "vocabulary_category", nullable = false)
     private VocabularyCategories vocabularyCategories;
 }
