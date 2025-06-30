@@ -57,9 +57,6 @@ public class TestAttempt {
     @Column(name = "status", nullable = false)
     private TestAttemptStatus status;
 
-    @Column(name = "screen_recording_url")
-    private String screenRecordingUrl;
-
     @Column(name = "ai_evaluation_result", columnDefinition = "TEXT")
     private String aiEvaluationResult;
 
