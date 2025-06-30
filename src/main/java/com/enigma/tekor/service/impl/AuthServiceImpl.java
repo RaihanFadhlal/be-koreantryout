@@ -27,6 +27,7 @@ import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.entity.PasswordResetToken;
 import com.enigma.tekor.entity.Role;
 import com.enigma.tekor.entity.User;
+import com.enigma.tekor.exception.AccountNotVerifiedException;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.repository.PasswordResetTokenRepository;
 import com.enigma.tekor.repository.UserRepository;
@@ -98,21 +99,19 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse login(LoginRequest loginRequest) {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             loginRequest.getUsername(),
-                            loginRequest.getPassword()
-                    )
-            );
+                            loginRequest.getPassword()));
 
             User user = userRepository.findByUsername(loginRequest.getUsername())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Kredensial tidak valid"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Akun belum diverifikasi/kredensial tidak valid. Silakan periksa email Anda."));
 
             if (Boolean.FALSE.equals(user.getIsVerified())) {
-                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Akun belum diverifikasi. Silakan periksa email Anda.");
+                throw new AccountNotVerifiedException("Akun belum diverifikasi/kredensial tidak valid. Silakan periksa email Anda.");
             }
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
@@ -136,7 +135,7 @@ public class AuthServiceImpl implements AuthService {
                     .token(tokenResponse)
                     .build();
         } catch (AuthenticationException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Kredensial tidak valid");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token sudah tidak valid lagi. Silakan periksa ulang email Anda.");
         }
     }
 
@@ -144,12 +143,12 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = Exception.class)
     public void verifyEmail(UUID userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Pengguna tidak ditemukan"));
+                .orElseThrow(() -> new BadRequestException("Akun tidak ditemukan/sudah pernah diverifikasi sebelumnya"));
 
         if (Boolean.TRUE.equals(user.getIsVerified())) {
             throw new BadRequestException("Akun Anda sudah pernah diverifikasi sebelumnya.");
         }
-        
+
         user.setIsVerified(true);
         userRepository.save(user);
     }
@@ -171,7 +170,7 @@ public class AuthServiceImpl implements AuthService {
                     .build();
             passwordResetTokenRepository.save(resetToken);
 
-            String resetUrl = baseUrl + "/reset-password?token=" + token; 
+            String resetUrl = baseUrl + "/reset-password?token=" + token;
             String emailBody = "<h1>Reset Password</h1>"
                     + "<p>Anda meminta untuk mereset password Anda. Klik link di bawah untuk melanjutkan:</p>"
                     + "<a href=\"" + resetUrl + "\">Reset Password Saya</a>"
@@ -192,7 +191,7 @@ public class AuthServiceImpl implements AuthService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token reset tidak valid."));
 
         if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
-            passwordResetTokenRepository.delete(token); // Hapus token yang sudah expired
+            passwordResetTokenRepository.delete(token);
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token reset sudah kedaluwarsa.");
         }
 
