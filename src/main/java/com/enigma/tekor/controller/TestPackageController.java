@@ -9,6 +9,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.enigma.tekor.dto.request.UpdateTestPackageRequest;
+import com.enigma.tekor.dto.response.TestPackageResponse;
+
 @RestController
 @RequestMapping("/api/v1/test-packages")
 @RequiredArgsConstructor
@@ -24,6 +27,35 @@ public class TestPackageController {
         return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.<Void>builder()
                 .status(HttpStatus.CREATED.name())
                 .message("Test package created successfully")
+                .build());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<CommonResponse<TestPackageResponse>> updateTestPackage(@PathVariable String id, @RequestBody UpdateTestPackageRequest request) {
+        TestPackageResponse updatedTestPackage = testPackageService.update(id, request);
+        return ResponseEntity.ok(CommonResponse.<TestPackageResponse>builder()
+                .status(HttpStatus.OK.name())
+                .message("Test package updated successfully")
+                .data(updatedTestPackage)
+                .build());
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<CommonResponse<TestPackageResponse>> getTestPackageById(@PathVariable String id) {
+        TestPackageResponse testPackage = testPackageService.getById(id);
+        return ResponseEntity.ok(CommonResponse.<TestPackageResponse>builder()
+                .status(HttpStatus.OK.name())
+                .message("Test package retrieved successfully")
+                .data(testPackage)
+                .build());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<CommonResponse<Void>> deleteTestPackage(@PathVariable String id) {
+        testPackageService.delete(id);
+        return ResponseEntity.ok(CommonResponse.<Void>builder()
+                .status(HttpStatus.OK.name())
+                .message("Test package deleted successfully")
                 .build());
     }
 }

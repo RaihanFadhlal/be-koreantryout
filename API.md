@@ -324,8 +324,7 @@ Endpoint ini menerima data dalam format multipart/form-data, bukan JSON. Request
 - description (Text): Deskripsi paket ujian.
 - price (Text): Harga normal dari paket tersebut.
 - discount_price (Text, Opsional): Harga setelah diskon. Jika diisi, harga ini yang akan digunakan sebagai harga jual aktif.
-- is_trial (Boolean): true atau false.
-- questions_file (File): File dengan format .csv yang berisi daftar soal.
+- questions_file (File): File dengan format .xlsx yang berisi daftar soal.
 
 #### Success Response `201 CREATED`
 
