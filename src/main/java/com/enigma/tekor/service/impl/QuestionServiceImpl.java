@@ -1,5 +1,10 @@
 package com.enigma.tekor.service.impl;
 
+import com.enigma.tekor.dto.request.CreateQuestionRequest;
+import com.enigma.tekor.entity.Option;
+import jakarta.transaction.Transactional;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -48,5 +53,24 @@ public class QuestionServiceImpl implements QuestionService {
         }
         questionRepository.deleteById(id);
     }
-    
+
+    @Override
+    @Transactional(rollbackOn = Exception.class)
+    public Question createQuestionWithOptions(CreateQuestionRequest request) {
+        Question question = new Question();
+        question.setQuestionText(request.getQuestionText());
+        question.setQuestionType(request.getQuestionType());
+        question.setImageUrl(request.getImageUrl());
+        question.setAudioUrl(request.getAudioUrl());
+
+        List<Option> options = new ArrayList<>();
+        for (String optionText : request.getOptions()) {
+            boolean isCorrect = optionText.equals(request.getCorrectOption());
+            options.add(new Option(null, question, optionText, isCorrect));
+        }
+
+        question.setOptions(options);
+
+        return questionRepository.save(question);
+    }
 }
