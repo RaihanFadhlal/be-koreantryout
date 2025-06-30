@@ -31,6 +31,7 @@ import com.enigma.tekor.exception.AccountNotVerifiedException;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.repository.PasswordResetTokenRepository;
 import com.enigma.tekor.repository.UserRepository;
+import com.enigma.tekor.security.CustomUserDetails;
 import com.enigma.tekor.service.AuthService;
 import com.enigma.tekor.service.EmailService;
 import com.enigma.tekor.service.RoleService;
@@ -112,7 +113,8 @@ public class AuthServiceImpl implements AuthService {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            User user = (User) authentication.getPrincipal();
+            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+            User user = userDetails.getUser();
 
             if (Boolean.FALSE.equals(user.getIsVerified())) {
                 throw new AccountNotVerifiedException("Akun belum diverifikasi. Silakan periksa email Anda.");
