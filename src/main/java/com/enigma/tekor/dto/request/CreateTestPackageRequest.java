@@ -16,5 +16,6 @@ public class CreateTestPackageRequest {
     private String name;
     private String description;
     private BigDecimal price;
+    private BigDecimal discountPrice;
     private MultipartFile file;
 }

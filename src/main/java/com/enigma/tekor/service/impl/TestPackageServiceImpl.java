@@ -17,10 +17,17 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.enigma.tekor.dto.request.UpdateTestPackageRequest;
+import com.enigma.tekor.dto.response.TestPackageResponse;
+import com.enigma.tekor.exception.UserNotFoundException;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -38,7 +45,7 @@ public class TestPackageServiceImpl implements TestPackageService {
             Sheet sheet = workbook.getSheetAt(0);
 
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Skip header row
+                if (row.getRowNum() == 0) continue;
 
                 String questionText = row.getCell(0).getStringCellValue();
                 QuestionType questionType = QuestionType.valueOf(row.getCell(1).getStringCellValue().toUpperCase());
@@ -76,8 +83,45 @@ public class TestPackageServiceImpl implements TestPackageService {
         testPackage.setName(request.getName());
         testPackage.setDescription(request.getDescription());
         testPackage.setPrice(request.getPrice());
+        testPackage.setDiscountPrice(request.getDiscountPrice());
+        testPackage.setIsTrial(request.getPrice().compareTo(BigDecimal.ZERO) <= 0);
         testPackage.setQuestions(questionsForPackage);
 
         testPackageRepository.save(testPackage);
+    }
+
+    @Override
+    public TestPackageResponse update(String id, UpdateTestPackageRequest request) {
+        TestPackage testPackage = testPackageRepository.findById(UUID.fromString(id)).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Test package not found"));
+        testPackage.setName(request.getName());
+        testPackage.setDescription(request.getDescription());
+        testPackage.setPrice(BigDecimal.valueOf(request.getPrice()));
+        testPackage.setDiscountPrice(BigDecimal.valueOf(request.getDiscountPrice()));
+        testPackageRepository.save(testPackage);
+        return TestPackageResponse.builder()
+                .id(String.valueOf(testPackage.getId()))
+                .name(testPackage.getName())
+                .description(testPackage.getDescription())
+                .price(testPackage.getPrice().doubleValue())
+                .discountPrice(testPackage.getDiscountPrice().doubleValue())
+                .build();
+    }
+
+    @Override
+    public TestPackageResponse getById(String id) {
+        TestPackage testPackage = testPackageRepository.findById(UUID.fromString(id)).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Test package not found"));
+        return TestPackageResponse.builder()
+                .id(String.valueOf(testPackage.getId()))
+                .name(testPackage.getName())
+                .description(testPackage.getDescription())
+                .price(testPackage.getPrice().doubleValue())
+                .discountPrice(testPackage.getDiscountPrice().doubleValue())
+                .build();
+    }
+
+    @Override
+    public void delete(String id) {
+        TestPackage testPackage = testPackageRepository.findById(UUID.fromString(id)).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Test package not found"));
+        testPackageRepository.delete(testPackage);
     }
 }
