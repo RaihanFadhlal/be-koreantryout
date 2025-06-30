@@ -8,12 +8,10 @@ import com.enigma.tekor.dto.request.CreateQuestionRequest;
 import com.enigma.tekor.entity.Question;
 
 public interface QuestionService {
-
     Question create(Question question);
     Question getById(UUID id);
     List<Question> getAll();
     List<Question> getByCategory(QuestionType category);
     void delete(UUID id);
     Question createQuestionWithOptions(CreateQuestionRequest request);
-
 }

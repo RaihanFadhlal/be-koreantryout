@@ -23,5 +23,4 @@ public class ProfileResponse {
     private String imageUrl;
     private Boolean isVerified;
     private LocalDateTime createdAt;
-    
 }
