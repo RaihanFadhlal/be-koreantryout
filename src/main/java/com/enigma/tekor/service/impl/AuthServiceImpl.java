@@ -57,6 +57,9 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.verification-path}")
     private String verificationPath;
 
+    @Value("${app.reset-password-path}")
+    private String resetPasswordPath;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserResponse register(RegisterRequest registerRequest) {
@@ -107,14 +110,13 @@ public class AuthServiceImpl implements AuthService {
                             loginRequest.getUsername(),
                             loginRequest.getPassword()));
 
-            User user = userRepository.findByUsername(loginRequest.getUsername())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Akun belum diverifikasi/kredensial tidak valid. Silakan periksa email Anda."));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            User user = (User) authentication.getPrincipal();
 
             if (Boolean.FALSE.equals(user.getIsVerified())) {
-                throw new AccountNotVerifiedException("Akun belum diverifikasi/kredensial tidak valid. Silakan periksa email Anda.");
+                throw new AccountNotVerifiedException("Akun belum diverifikasi. Silakan periksa email Anda.");
             }
-
-            SecurityContextHolder.getContext().setAuthentication(authentication);
 
             String accessToken = jwtUtil.generateAccessToken(user);
             String refreshToken = jwtUtil.generateRefreshToken(user);
@@ -135,7 +137,7 @@ public class AuthServiceImpl implements AuthService {
                     .token(tokenResponse)
                     .build();
         } catch (AuthenticationException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Token sudah tidak valid lagi. Silakan periksa ulang email Anda.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Kredensial tidak valid (username atau password salah).");
         }
     }
 
@@ -170,13 +172,25 @@ public class AuthServiceImpl implements AuthService {
                     .build();
             passwordResetTokenRepository.save(resetToken);
 
-            String resetUrl = baseUrl + "/reset-password?token=" + token;
+            String resetUrl = baseUrl + resetPasswordPath + "?token=" + token;
             String emailBody = "<h1>Reset Password</h1>"
                     + "<p>Anda meminta untuk mereset password Anda. Klik link di bawah untuk melanjutkan:</p>"
-                    + "<a href=\"" + resetUrl + "\">Reset Password Saya</a>"
+                    + "<a href=\"" + resetUrl + "\" style=\"background-color:#DC3545;color:white;padding:15px 25px;text-align:center;text-decoration:none;display:inline-block;border-radius:8px;\">Reset Password Saya</a>"
                     + "<p>Link ini hanya valid selama 15 menit. Jika Anda tidak merasa meminta ini, abaikan email ini.</p>";
 
             emailService.sendEmail(user.getEmail(), "Permintaan Reset Password", emailBody);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void validatePasswordResetToken(String token) {
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Link reset password tidak valid atau sudah digunakan."));
+
+        if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
+            passwordResetTokenRepository.delete(resetToken);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Link reset password sudah kedaluwarsa. Silakan ajukan permintaan baru.");
         }
     }
 
@@ -188,7 +202,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         PasswordResetToken token = passwordResetTokenRepository.findByToken(request.getToken())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token reset tidak valid."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Token reset tidak valid atau sudah digunakan."));
 
         if (token.getExpiryDate().isBefore(LocalDateTime.now())) {
             passwordResetTokenRepository.delete(token);
