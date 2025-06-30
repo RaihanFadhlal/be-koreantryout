@@ -1,7 +1,9 @@
 package com.enigma.tekor.controller;
 
+import java.net.URI;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,17 +31,19 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @PostMapping("/register")
     public ResponseEntity<CommonResponse<UserResponse>> registerUser(@RequestBody RegisterRequest request) {
         UserResponse userResponse = authService.register(request);
-        
+
         CommonResponse<UserResponse> response = CommonResponse.<UserResponse>builder()
                 .status("success")
                 .message("Registration successful. Please check your email for verification.")
                 .data(userResponse)
                 .build();
-        
+
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -52,39 +56,53 @@ public class AuthController {
                 .message("Login successful.")
                 .data(loginResponse)
                 .build();
-        
+
         return ResponseEntity.ok(response);
     }
 
     @GetMapping("/verify")
     public ResponseEntity<Void> verifyEmail(@RequestParam("userId") UUID userId) {
         authService.verifyEmail(userId);
+
+        String loginUrl = frontendUrl + "/login";
+
         return ResponseEntity.status(HttpStatus.FOUND)
-                .header("Location", "http://localhost:5173/login")
+                .location(URI.create(loginUrl))
                 .build();
     }
 
     @PostMapping("/forgot-password")
     public ResponseEntity<CommonResponse<?>> forgotPassword(@RequestBody ForgotPasswordRequest request) {
         authService.requestPasswordReset(request);
-        
+
         CommonResponse<?> response = CommonResponse.builder()
                 .status(HttpStatus.OK.getReasonPhrase())
                 .message("If the email is registered, a password reset link has been sent.")
                 .build();
-        
+
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/reset-password")
+    public ResponseEntity<Void> showResetPasswordPage(@RequestParam("token") String token) {
+        authService.validatePasswordResetToken(token);
+
+        String resetUrl = frontendUrl + "/reset-password?token=" + token;
+
+        return ResponseEntity.status(HttpStatus.FOUND)
+                .location(URI.create(resetUrl))
+                .build();
     }
 
     @PostMapping("/reset-password")
     public ResponseEntity<CommonResponse<?>> resetPassword(@RequestBody ResetPasswordRequest request) {
         authService.resetPassword(request);
-        
+
         CommonResponse<?> response = CommonResponse.builder()
                 .status(HttpStatus.OK.getReasonPhrase())
                 .message("Your password has been successfully reset. Please log in.")
                 .build();
-        
+
         return ResponseEntity.ok(response);
     }
 }
