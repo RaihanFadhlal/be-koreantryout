@@ -1,0 +1,203 @@
+{
+	"info": {
+		"_postman_id": "34dad317-fc47-436f-a13c-c51862c6b403",
+		"name": "Tekor Auth API",
+		"description": "Koleksi untuk menguji alur otentikasi dan otorisasi pada API Aplikasi Tekor.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "42785131"
+	},
+	"item": [
+		{
+			"name": "1. Register New User",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"fullName\": \"Orion\",\n    \"username\": \"celestialorion\",\n    \"email\": \"celestialorion919@gmail.com\",\n    \"password\": \"Password123\",\n    \"phoneNumber\": \"081234567890\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/register",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"register"
+					]
+				},
+				"description": "Mendaftarkan user baru. Jika berhasil, Anda akan mendapatkan ID user yang bisa digunakan untuk variabel `newUserId`."
+			},
+			"response": []
+		},
+		{
+			"name": "2. Verify Email (Simulasi Klik Link)",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/verify?userId={{newUserId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"verify"
+					],
+					"query": [
+						{
+							"key": "userId",
+							"value": "{{newUserId}}"
+						}
+					]
+				},
+				"description": "Ini adalah simulasi saat user mengklik link verifikasi dari email. \n\n**PENTING:**\n1. Jalankan request \"1. Register New User\" terlebih dahulu.\n2. Salin nilai `id` dari response registrasi.\n3. Tempel (paste) nilai `id` tersebut ke dalam variabel `newUserId` di level Collection atau Environment.\n4. **Di Pengaturan Postman (Settings), matikan 'Automatically follow redirects'** agar Anda bisa melihat response `302 Found` dan header `Location`."
+			},
+			"response": []
+		},
+		{
+			"name": "3. Login User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Script ini secara otomatis mengambil accessToken dari response dan menyimpannya sebagai variabel.",
+							"// Ini adalah best practice agar Anda tidak perlu copy-paste token untuk request selanjutnya.",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"",
+							"if (jsonData.data && jsonData.data.token && jsonData.data.token.accessToken) {",
+							"    pm.collectionVariables.set(\"accessToken\", jsonData.data.token.accessToken);",
+							"    console.log(\"Access Token berhasil disimpan sebagai variabel koleksi.\");",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"username\": \"celestialorion\",\n    \"password\": \"Password123\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/login",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"login"
+					]
+				},
+				"description": "Login untuk mendapatkan Access Token dan Refresh Token. Access token akan otomatis tersimpan di variabel `accessToken`."
+			},
+			"response": []
+		},
+		{
+			"name": "4. Forgot Password",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"celestialorion919@gmail.com\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/forgot-password",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"forgot-password"
+					]
+				},
+				"description": "Memulai alur lupa password. API akan mengirim email berisi link reset.\n\n**Langkah Selanjutnya:**\n1. Periksa email (atau log aplikasi jika menggunakan MailHog/Mailtrap).\n2. Temukan link reset, contoh: `http://localhost:8080/api/v1/auth/reset-password?token=xxxx-xxxx-xxxx`\n3. Salin nilai `token` dari URL tersebut.\n4. Tempel ke variabel `resetToken`."
+			},
+			"response": []
+		},
+		{
+			"name": "5. Reset Password",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"token\": \"9f09a7a2-5429-4c78-9285-63dbe9a92d2c\",\n    \"newPassword\": \"PasswordBaru123!\",\n    \"confirmPassword\": \"PasswordBaru123!\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/auth/reset-password",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"auth",
+						"reset-password"
+					]
+				},
+				"description": "Mengirimkan password baru beserta token yang didapat dari email.\n\n**PENTING:** Pastikan Anda sudah mengisi variabel `resetToken` sebelum menjalankan request ini."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		},
+		{
+			"key": "newUserId",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "accessToken",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "resetToken",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
