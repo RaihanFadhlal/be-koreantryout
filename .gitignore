@@ -36,4 +36,4 @@ build/
 .env
 
 ### GEMINI.md ###
-.GEMINI.md
+GEMINI.md
