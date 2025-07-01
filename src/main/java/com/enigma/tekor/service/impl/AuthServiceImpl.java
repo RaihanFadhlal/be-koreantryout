@@ -27,7 +27,6 @@ import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.entity.PasswordResetToken;
 import com.enigma.tekor.entity.Role;
 import com.enigma.tekor.entity.User;
-import com.enigma.tekor.exception.AccountNotVerifiedException;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.repository.PasswordResetTokenRepository;
 import com.enigma.tekor.repository.UserRepository;
@@ -116,10 +115,6 @@ public class AuthServiceImpl implements AuthService {
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             User user = userDetails.getUser();
 
-            if (Boolean.FALSE.equals(user.getIsVerified())) {
-                throw new AccountNotVerifiedException("Akun belum diverifikasi. Silakan periksa email Anda.");
-            }
-
             String accessToken = jwtUtil.generateAccessToken(user);
             String refreshToken = jwtUtil.generateRefreshToken(user);
 
@@ -139,7 +134,7 @@ public class AuthServiceImpl implements AuthService {
                     .token(tokenResponse)
                     .build();
         } catch (AuthenticationException e) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Kredensial tidak valid (username atau password salah).");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Kredensial belum valid. Silakan periksa email Anda atau cek ulang Username/Password Anda");
         }
     }
 

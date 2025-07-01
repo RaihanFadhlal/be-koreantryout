@@ -48,7 +48,7 @@ public class TestPackageServiceImpl implements TestPackageService {
                 if (row.getRowNum() == 0) continue;
 
                 String questionText = row.getCell(0).getStringCellValue();
-                QuestionType questionType = QuestionType.valueOf(row.getCell(1).getStringCellValue().toUpperCase());
+                QuestionType questionType = QuestionType.valueOf(row.getCell(1).getStringCellValue().trim().toUpperCase());
                 String imageUrl = row.getCell(2) != null ? row.getCell(2).getStringCellValue() : null;
                 String audioUrl = row.getCell(3) != null ? row.getCell(3).getStringCellValue() : null;
                 String option1 = row.getCell(4).getStringCellValue();
@@ -117,6 +117,11 @@ public class TestPackageServiceImpl implements TestPackageService {
                 .price(testPackage.getPrice().doubleValue())
                 .discountPrice(testPackage.getDiscountPrice().doubleValue())
                 .build();
+    }
+
+    @Override
+    public TestPackage getOneById(UUID id) {
+        return testPackageRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Test package not found"));
     }
 
     @Override
