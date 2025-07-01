@@ -22,6 +22,7 @@ import com.enigma.tekor.dto.response.LoginResponse;
 import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.service.AuthService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -35,7 +36,7 @@ public class AuthController {
     private String frontendUrl;
 
     @PostMapping("/register")
-    public ResponseEntity<CommonResponse<UserResponse>> registerUser(@RequestBody RegisterRequest request) {
+    public ResponseEntity<CommonResponse<UserResponse>> registerUser(@Valid @RequestBody RegisterRequest request) {
         UserResponse userResponse = authService.register(request);
 
         CommonResponse<UserResponse> response = CommonResponse.<UserResponse>builder()
