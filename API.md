@@ -24,12 +24,13 @@ Endpoint yang berhubungan dengan registrasi, login, dan keamanan akun.
 
 #### Request Body
 
-| Field     | Type   | Description                  | Required |
-|-----------|--------|------------------------------|----------|
-| fullName  | String | Nama lengkap pengguna.       | Yes      |
-| username  | String | Username unik.               | Yes      |
-| email     | String | Alamat email unik dan valid. | Yes      |
-| password  | String | Password pengguna (min. 8 karakter). | Yes |
+| Field         | Type   | Description                  | Required |
+|---------------|--------|------------------------------|----------|
+| fullName      | String | Nama lengkap pengguna.       | Yes      |
+| username      | String | Username unik.               | Yes      |
+| email         | String | Alamat email unik dan valid. | Yes      |
+| password      | String | Password pengguna (min. 8 karakter). | Yes |
+| phoneNumber   | String | Nomor telepon pengguna       | Yes      |
 
 #### Contoh Request
 
@@ -38,7 +39,8 @@ Endpoint yang berhubungan dengan registrasi, login, dan keamanan akun.
   "fullName": "Calon PMI Sukses",
   "username": "suksespmi25",
   "email": "calon.pmi@example.com",
-  "password": "PasswordSuperKuat123"
+  "password": "PasswordSuperKuat123",
+  "phoneNumber": "088808888808"
 }
 ````
 

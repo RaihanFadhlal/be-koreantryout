@@ -1,10 +1,5 @@
 package com.enigma.tekor.service.impl;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.time.ZoneId;
 import java.util.Map;
 import java.util.UUID;
@@ -20,7 +15,6 @@ import com.enigma.tekor.dto.response.ProfilePictureResponse;
 import com.enigma.tekor.dto.response.ProfileResponse;
 import com.enigma.tekor.entity.User;
 import com.enigma.tekor.exception.BadRequestException;
-import com.enigma.tekor.exception.FileStorageException;
 import com.enigma.tekor.exception.InvalidFileException;
 import com.enigma.tekor.exception.UserNotFoundException;
 import com.enigma.tekor.exception.UsernameAlreadyExistsException;
@@ -29,7 +23,6 @@ import com.enigma.tekor.service.CloudinaryService;
 import com.enigma.tekor.service.UserService;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.java.Log;
 
 @Service
 @RequiredArgsConstructor
