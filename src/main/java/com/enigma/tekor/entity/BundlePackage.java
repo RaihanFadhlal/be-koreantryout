@@ -20,7 +20,6 @@ import lombok.Setter;
 @Entity
 @Table(name = "bundle_packages")
 @IdClass(BundlePackageId.class)
-
 public class BundlePackage {
     @Id
     @ManyToOne(fetch = FetchType.LAZY)

@@ -17,5 +17,4 @@ import lombok.Setter;
 public class BundlePackageId implements Serializable{
     private UUID bundle;
     private UUID testPackage;
-    
 }

@@ -34,3 +34,6 @@ build/
 
 ### Environtment ###
 .env
+
+### GEMINI.md ###
+.GEMINI.md
