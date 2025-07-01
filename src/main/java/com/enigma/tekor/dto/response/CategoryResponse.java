@@ -15,5 +15,4 @@ import lombok.Setter;
 @Builder
 public class CategoryResponse {
     private List<String> categories;
-    
 }
