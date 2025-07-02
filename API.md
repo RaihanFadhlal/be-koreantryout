@@ -533,114 +533,95 @@ Endpoint untuk mengelola transaksi
 
 ### 5.1 Create Transaction
 
-**Endpoint**: POST /api/v1/transactions
+**Endpoint**: `POST /api/transactions/create`
 **Authorization**: Bearer Token (User)
-**Description**: Endpoint ini dipanggil saat pengguna akan memulai proses pembayaran. Server akan membuat catatan transaksi lokal dengan status PENDING dan meminta token pembayaran dari Midtrans.
+**Description**: Endpoint ini dipanggil saat pengguna akan memulai proses pembayaran. Server akan membuat catatan transaksi lokal dengan status PENDING dan meminta URL pembayaran dari Midtrans.
 
 **Logika Bisnis**:
-Harus ada validasi: hanya salah satu dari package_id atau bundle_id yang boleh ada dalam satu request.
-Server harus mengambil harga dari tabel test_packages atau bundles (memeriksa discount_price terlebih dahulu) untuk menentukan amount.
+*   Hanya salah satu dari `testPackageId` atau `bundleId` yang boleh ada dalam satu request.
+*   Server akan mengambil harga dari database berdasarkan ID yang diberikan.
 
 #### Request Body
 
 ```json
 // Opsi 1: Membeli satu paket
 {
-  "package_id": 1
+  "testPackageId": "uuid-test-package-1"
 }
 
 // Opsi 2: Membeli satu bundle
 {
-  "bundle_id": 1
+  "bundleId": "uuid-bundle-1"
 }
 ```
 
 #### Success Response `201 CREATED`
 
-Mengembalikan snap_token dari Midtrans yang akan digunakan oleh frontend untuk menampilkan jendela pembayaran.
+Mengembalikan `redirect_url` dari Midtrans yang akan digunakan oleh frontend untuk menampilkan halaman pembayaran.
 
 ```json
 {
-  "status": "success",
-  "message": "Transaction created. Please proceed with the payment.",
-  "data": {
-    "transaction_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d", // ID dari database Anda
-    "midtrans_order_id": "ORDER-1719731400-XYZ", // ID order yang dikirim ke Midtrans
-    "snap_token": "abcdef-1234-ghijkl-5678-mnopqr" // Token dari Midtrans untuk frontend
-  }
+    "statusCode": 201,
+    "message": "Transaction created successfully, please proceed to payment.",
+    "data": {
+        "orderId": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+        "redirectUrl": "https://app.sandbox.midtrans.com/snap/v2/vtweb/...",
+        "transactionStatus": "PENDING"
+    }
 }
 ```
 
 ### 5.2 Handle Notification From Midtrans (Webhook)
 
-**Endpoint**: `POST /transactions/notifications`
-**Authorization**: Midtrans Signature Key (Bukan JWT Pengguna)
-**Description**: Endpoint ini HANYA untuk dipanggil oleh server Midtrans, bukan oleh pengguna atau aplikasi frontend Anda. Endpoint ini menerima pembaruan status pembayaran (misalnya, berhasil, gagal, kadaluwarsa).
-
-Keamanan (Sangat Penting):
-- Endpoint ini tidak boleh dilindungi oleh otentikasi pengguna biasa (JWT).
-- Keamanannya dijamin dengan memvalidasi signature_key yang dikirim oleh Midtrans. signature_key adalah hash SHA512 dari order_id + status_code + gross_amount + server_key Anda. Jika hash tidak cocok, abaikan request tersebut.
+**Endpoint**: `POST /api/transactions/midtrans/webhook`
+**Authorization**: Public (Verifikasi dilakukan dengan memeriksa payload dari Midtrans)
+**Description**: Endpoint ini HANYA untuk dipanggil oleh server Midtrans, bukan oleh pengguna. Endpoint ini menerima pembaruan status pembayaran.
 
 #### Request Body (Contoh dari Midtrans)
 
 ```json
 {
-  "transaction_time": "2025-06-30 14:10:05",
-  "transaction_status": "capture", // atau "settlement"
-  "transaction_id": "...",
-  "status_message": "...",
+  "transaction_time": "2025-07-02 14:10:05",
+  "transaction_status": "settlement",
+  "transaction_id": "midtrans-transaction-id",
+  "status_message": "midtrans status message",
   "status_code": "200",
   "signature_key": "...",
-  "order_id": "ORDER-1719731400-XYZ",
+  "order_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
   "payment_type": "gopay",
-  "gross_amount": "59900.00"
+  "gross_amount": "80000.00"
 }
 ```
 
-#### Success Response 200 OK
-Midtrans hanya mengharapkan respons status 200 OK tanpa body untuk menandakan bahwa notifikasi telah diterima.
+#### Success Response `200 OK`
+Midtrans hanya mengharapkan respons status `200 OK` tanpa body untuk menandakan bahwa notifikasi telah diterima.
 
-```json
-// Cukup kembalikan HTTP Status 200 OK
-```
-
-Logika Backend (Wajib)
-VERIFIKASI SIGNATURE KEY: Langkah pertama dan terpenting. Jika tidak valid, hentikan proses.
-Cari transaksi di database Anda menggunakan order_id. Jika tidak ditemukan, abaikan.
-Pastikan gross_amount dari notifikasi cocok dengan amount yang tersimpan di database Anda.
-Periksa status transaksi saat ini. Jika sudah SUCCESS, jangan proses lagi (untuk menangani idempotency).
-Update status transaksi di database Anda menjadi SUCCESS atau FAILED berdasarkan transaction_status.
-Jika SUCCESS, berikan hak akses kepada pengguna untuk konten yang dibeli (misalnya, dengan membuat entri di tabel user_access atau sejenisnya).
+**Logika Backend (Wajib)**
+1.  Cari transaksi di database Anda menggunakan `order_id`.
+2.  Update status transaksi di database Anda menjadi `SUCCESS` atau `FAILED` berdasarkan `transaction_status`.
+3.  Jika `SUCCESS`, berikan hak akses kepada pengguna untuk konten yang dibeli (misalnya, dengan membuat entri `TestAttempt`).
 
 ### 5.3 Get User Transaction History
 
-**Endpoint**: GET `/transactions`
-**Authorization**: Authenticated User
+**Endpoint**: `GET /api/transactions`
+**Authorization**: Bearer Token (User)
 **Description**: Mengambil daftar semua riwayat transaksi yang pernah dilakukan oleh pengguna yang sedang login.
 
 #### Success Response `200 OK`
 ```json
 {
-  "status": "success",
-  "message": "User transactions history retrieved successfully.",
-  "data": [
-    {
-      "transaction_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-      "item_name": "Paket Ujian Akhir Pekan",
-      "item_type": "PACKAGE",
-      "amount": "59900.00",
-      "status": "SUCCESS",
-      "transaction_date": "2025-06-30T14:10:05Z"
-    },
-    {
-      "transaction_id": "f9e8d7c6-b5a4-4f3e-2d1c-0b9a8f7e6d5c",
-      "item_name": "Bundle Hemat 3-in-1",
-      "item_type": "BUNDLE",
-      "amount": "120000.00",
-      "status": "FAILED",
-      "transaction_date": "2025-06-29T11:00:00Z"
-    }
-  ]
+    "statusCode": 200,
+    "message": "Transactions retrieved successfully",
+    "data": [
+        {
+            "transaction_id": "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
+            "item_name": "Dummy Test Package",
+            "item_type": "PACKAGE",
+            "amount": 80000.00,
+            "status": "SUCCESS",
+            "transaction_date": "2025-07-02T14:10:05Z"
+        }
+    ]
 }
 ```
 

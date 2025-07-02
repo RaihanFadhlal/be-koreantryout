@@ -4,8 +4,9 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-import com.enigma.tekor.constant.TransactionStatus;
 import org.hibernate.annotations.CreationTimestamp;
+
+import com.enigma.tekor.constant.TransactionStatus;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -46,7 +47,7 @@ public class Transaction {
     @JoinColumn(name = "bundle_id")
     private Bundle bundle;
 
-    @Column(name = "midtrans_order_id", nullable = false, unique = true, length = 255)
+    @Column(name = "midtrans_order_id", nullable=true, unique = true, length = 255)
     private String midtransOrderId;
 
     @Column(name = "amount", nullable = false, precision = 10, scale = 2)
