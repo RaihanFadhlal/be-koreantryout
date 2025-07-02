@@ -33,7 +33,6 @@ import lombok.RequiredArgsConstructor;
 public class VocabularyServiceImpl implements VocabularyService {
     private final VocabularyRepository vocabularyRepository;
 
-
     @Override
     public List<String> getAllCategoryNames() {
         return Arrays.stream(VocabularyCategories.values())

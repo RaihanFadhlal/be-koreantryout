@@ -1,7 +1,6 @@
 package com.enigma.tekor.service.impl;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -29,11 +28,11 @@ import com.enigma.tekor.entity.Role;
 import com.enigma.tekor.entity.User;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.repository.PasswordResetTokenRepository;
-import com.enigma.tekor.repository.UserRepository;
 import com.enigma.tekor.security.CustomUserDetails;
 import com.enigma.tekor.service.AuthService;
 import com.enigma.tekor.service.EmailService;
 import com.enigma.tekor.service.RoleService;
+import com.enigma.tekor.service.UserService;
 import com.enigma.tekor.util.JwtUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -44,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final PasswordEncoder passwordEncoder;
     private final RoleService roleService;
-    private final UserRepository userRepository;
+    private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
@@ -63,13 +62,13 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserResponse register(RegisterRequest registerRequest) {
-        userRepository.findByUsername(registerRequest.getUsername()).ifPresent(user -> {
+        if (userService.findByUsername(registerRequest.getUsername()) != null) {
             throw new BadRequestException("Username already exists. Please try another username");
-        });
+        }
 
-        userRepository.findByEmail(registerRequest.getEmail()).ifPresent(user -> {
+        if (userService.getByEmail(registerRequest.getEmail()) != null) {
             throw new BadRequestException("Email already exists. Please try another email");
-        });
+        }
 
         Role userRole = roleService.getOrSave("ROLE_USER");
         User newUser = User.builder()
@@ -81,7 +80,7 @@ public class AuthServiceImpl implements AuthService {
                 .isVerified(false)
                 .build();
 
-        userRepository.save(newUser);
+        userService.save(newUser);
 
         String verificationUrl = baseUrl + verificationPath + "?userId=" + newUser.getId();
         String emailBody = "<h1>Verifikasi Email - Aplikasi Tekor</h1>"
@@ -141,42 +140,37 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void verifyEmail(UUID userId) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new BadRequestException("Akun tidak ditemukan/sudah pernah diverifikasi sebelumnya"));
+        User user = userService.findById(userId.toString());
 
         if (Boolean.TRUE.equals(user.getIsVerified())) {
             throw new BadRequestException("Akun Anda sudah pernah diverifikasi sebelumnya.");
         }
 
         user.setIsVerified(true);
-        userRepository.save(user);
+        userService.update(user);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void requestPasswordReset(ForgotPasswordRequest request) {
-        Optional<User> userOptional = userRepository.findByEmail(request.getEmail());
+        User user = userService.getByEmail(request.getEmail());
 
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
+        String token = UUID.randomUUID().toString();
 
-            String token = UUID.randomUUID().toString();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(LocalDateTime.now().plusMinutes(15)) // Token valid selama 15 menit
+                .build();
+        passwordResetTokenRepository.save(resetToken);
 
-            PasswordResetToken resetToken = PasswordResetToken.builder()
-                    .token(token)
-                    .user(user)
-                    .expiryDate(LocalDateTime.now().plusMinutes(15)) // Token valid selama 15 menit
-                    .build();
-            passwordResetTokenRepository.save(resetToken);
+        String resetUrl = baseUrl + resetPasswordPath + "?token=" + token;
+        String emailBody = "<h1>Reset Password</h1>"
+                + "<p>Anda meminta untuk mereset password Anda. Klik link di bawah untuk melanjutkan:</p>"
+                + "<a href=\"" + resetUrl + "\" style=\"background-color:#DC3545;color:white;padding:15px 25px;text-align:center;text-decoration:none;display:inline-block;border-radius:8px;\">Reset Password Saya</a>"
+                + "<p>Link ini hanya valid selama 15 menit. Jika Anda tidak merasa meminta ini, abaikan email ini.</p>";
 
-            String resetUrl = baseUrl + resetPasswordPath + "?token=" + token;
-            String emailBody = "<h1>Reset Password</h1>"
-                    + "<p>Anda meminta untuk mereset password Anda. Klik link di bawah untuk melanjutkan:</p>"
-                    + "<a href=\"" + resetUrl + "\" style=\"background-color:#DC3545;color:white;padding:15px 25px;text-align:center;text-decoration:none;display:inline-block;border-radius:8px;\">Reset Password Saya</a>"
-                    + "<p>Link ini hanya valid selama 15 menit. Jika Anda tidak merasa meminta ini, abaikan email ini.</p>";
-
-            emailService.sendEmail(user.getEmail(), "Permintaan Reset Password", emailBody);
-        }
+        emailService.sendEmail(user.getEmail(), "Permintaan Reset Password", emailBody);
     }
 
     @Override
@@ -208,7 +202,7 @@ public class AuthServiceImpl implements AuthService {
 
         User user = token.getUser();
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
-        userRepository.save(user);
+        userService.update(user);
 
         passwordResetTokenRepository.delete(token);
     }

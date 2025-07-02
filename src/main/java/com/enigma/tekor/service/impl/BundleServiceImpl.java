@@ -6,8 +6,8 @@ import com.enigma.tekor.dto.response.PackageInBundleResponse;
 import com.enigma.tekor.entity.Bundle;
 import com.enigma.tekor.entity.BundlePackage;
 import com.enigma.tekor.entity.TestPackage;
-import com.enigma.tekor.repository.BundlePackageRepository;
 import com.enigma.tekor.repository.BundleRepository;
+import com.enigma.tekor.service.BundlePackageService;
 import com.enigma.tekor.service.BundleService;
 import com.enigma.tekor.service.TestPackageService;
 import org.springframework.context.annotation.Lazy;
@@ -23,16 +23,16 @@ public class BundleServiceImpl implements BundleService {
 
     private final BundleRepository bundleRepository;
     private final TestPackageService testPackageService;
-    private final BundlePackageRepository bundlePackageRepository;
+    private final BundlePackageService bundlePackageService;
 
     public BundleServiceImpl(
             BundleRepository bundleRepository,
             @Lazy TestPackageService testPackageService,
-            BundlePackageRepository bundlePackageRepository
+            BundlePackageService bundlePackageService
     ) {
         this.bundleRepository = bundleRepository;
         this.testPackageService = testPackageService;
-        this.bundlePackageRepository = bundlePackageRepository;
+        this.bundlePackageService = bundlePackageService;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -49,7 +49,7 @@ public class BundleServiceImpl implements BundleService {
             BundlePackage bundlePackage = new BundlePackage();
             bundlePackage.setBundle(bundle);
             bundlePackage.setTestPackage(testPackage);
-            return bundlePackageRepository.save(bundlePackage);
+            return bundlePackageService.save(bundlePackage);
         }).collect(Collectors.toList());
         bundle.setBundlePackages(bundlePackages);
 
@@ -67,6 +67,11 @@ public class BundleServiceImpl implements BundleService {
     public BundleResponse getById(UUID id) {
         Bundle bundle = bundleRepository.findById(id).orElseThrow(() -> new RuntimeException("Bundle not found"));
         return toBundleResponse(bundle);
+    }
+
+    @Override
+    public com.enigma.tekor.entity.Bundle getBundleById(UUID id) {
+        return bundleRepository.findById(id).orElseThrow(() -> new RuntimeException("Bundle not found"));
     }
 
     private BundleResponse toBundleResponse(Bundle bundle) {

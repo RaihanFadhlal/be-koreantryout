@@ -67,6 +67,9 @@ public class TestAttempt {
     @Column(name = "ai_evaluation_result", columnDefinition = "TEXT")
     private String aiEvaluationResult;
 
+    @Column(name = "remaining_duration")
+    private Long remainingDuration;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private Date createdAt;

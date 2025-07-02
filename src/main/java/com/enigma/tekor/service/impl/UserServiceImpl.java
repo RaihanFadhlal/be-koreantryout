@@ -79,7 +79,7 @@ public class UserServiceImpl implements UserService {
 
             if (user.getImageUrl() != null && !user.getImageUrl().isEmpty()) {
                 try {
-                    String publicId = extractPublicIdFromUrl(user.getImageUrl());
+                    String publicId = cloudinaryService.extractPublicIdFromUrl(user.getImageUrl());
                     cloudinaryService.delete(publicId);
                 } catch (Exception e) {
                     System.err.println(e.getMessage());
@@ -141,9 +141,30 @@ public class UserServiceImpl implements UserService {
         }
     }
 
-    private String extractPublicIdFromUrl(String imageUrl) {
-        String[] parts = imageUrl.split("/");
-        String lastPart = parts[parts.length - 1];
-        return lastPart.substring(0, lastPart.lastIndexOf('.'));
+    public User getByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email));
+    }
+
+    @Override
+    public User findByUsername(String username) {
+        return userRepository.findByUsername(username)
+                .orElse(null); // Return null if not found, AuthServiceImpl will handle the exception
+    }
+
+    @Override
+    public User save(User user) {
+        return userRepository.save(user);
+    }
+
+    @Override
+    public User findById(String id) {
+        return userRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id));
+    }
+
+    @Override
+    public User update(User user) {
+        return userRepository.save(user);
     }
 }

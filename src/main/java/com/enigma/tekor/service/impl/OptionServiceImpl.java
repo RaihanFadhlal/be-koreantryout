@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import com.enigma.tekor.entity.Option;
 import com.enigma.tekor.repository.OptionRepository;
-import com.enigma.tekor.repository.QuestionRepository;
+import com.enigma.tekor.service.QuestionService;
 import com.enigma.tekor.service.OptionService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -20,14 +20,12 @@ import lombok.RequiredArgsConstructor;
 public class OptionServiceImpl implements OptionService {
 
      private final OptionRepository optionRepository;
-     private final QuestionRepository questionRepository;
+     private final QuestionService questionService;
     
 
       @Override
     public Option create(Option option) {
-        if (!questionRepository.existsById(option.getQuestion().getId())) {
-            throw new EntityNotFoundException("Question not found with id: " + option.getQuestion().getId());
-        }
+        questionService.getById(option.getQuestion().getId());
         return optionRepository.save(option);
     }
 
