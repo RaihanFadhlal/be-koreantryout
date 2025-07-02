@@ -19,8 +19,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -30,6 +32,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 @Entity
+@Builder
 @Table(name = "test_attempts")
 public class TestAttempt {
     @Id
@@ -43,6 +46,10 @@ public class TestAttempt {
     @ManyToOne
     @JoinColumn(name = "package_id", nullable = false)
     private TestPackage testPackage;
+
+    @OneToOne
+    @JoinColumn(name = "transaction_id", nullable = false, unique = true)
+    private Transaction transaction;
 
     @Column(name = "start_time")
     private Date startTime;
