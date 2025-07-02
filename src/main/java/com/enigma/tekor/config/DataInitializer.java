@@ -104,7 +104,7 @@ public class DataInitializer implements CommandLineRunner {
             transaction.setUser(user);
             transaction.setTestPackage(dummyPackage);
             transaction.setAmount(dummyPackage.getPrice());
-            transaction.setMidtransOrderId("dummy-order-" + UUID.randomUUID().toString());
+            transaction.setMidtransOrderId("TEKOR-" + UUID.randomUUID().toString());
             transaction.setStatus(TransactionStatus.SUCCESS);
             transactionRepository.save(transaction);
         }
