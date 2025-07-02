@@ -1,11 +1,14 @@
 package com.enigma.tekor.repository;
 
-import com.enigma.tekor.entity.Transaction;
+import java.util.Optional;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.UUID;
+import com.enigma.tekor.entity.Transaction;
 
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
+    Optional<Transaction> findByMidtransOrderId(String midtransOrderId);
 }
