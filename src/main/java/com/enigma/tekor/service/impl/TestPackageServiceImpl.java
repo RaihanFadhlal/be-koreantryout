@@ -1,5 +1,8 @@
 package com.enigma.tekor.service.impl;
 
+import com.enigma.tekor.dto.response.BundleResponse;
+import com.enigma.tekor.dto.response.ProductResponse;
+import com.enigma.tekor.service.BundleService;
 import com.enigma.tekor.constant.QuestionType;
 import com.enigma.tekor.dto.request.CreateQuestionRequest;
 import com.enigma.tekor.dto.request.CreateTestPackageRequest;
@@ -28,6 +31,8 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -35,6 +40,7 @@ public class TestPackageServiceImpl implements TestPackageService {
 
     private final TestPackageRepository testPackageRepository;
     private final QuestionService questionService;
+    private final BundleService bundleService;
 
     @Override
     @Transactional(rollbackOn = Exception.class)
@@ -128,5 +134,32 @@ public class TestPackageServiceImpl implements TestPackageService {
     public void delete(String id) {
         TestPackage testPackage = testPackageRepository.findById(UUID.fromString(id)).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Test package not found"));
         testPackageRepository.delete(testPackage);
+    }
+
+    @Override
+    public List<ProductResponse> getAllPackagesAndBundles() {
+        List<TestPackage> testPackages = testPackageRepository.findAll();
+        List<ProductResponse> productResponses = testPackages.stream()
+                .map(tp -> ProductResponse.builder()
+                        .id(tp.getId())
+                        .name(tp.getName())
+                        .price(tp.getPrice())
+                        .discountPrice(tp.getDiscountPrice())
+                        .type("package")
+                        .build())
+                .toList();
+
+        List<BundleResponse> bundleResponses = bundleService.getAll();
+        List<ProductResponse> bundleProductResponses = bundleResponses.stream()
+                .map(br -> ProductResponse.builder()
+                        .id(br.getId())
+                        .name(br.getName())
+                        .price(br.getPrice())
+                        .type("bundle")
+                        .build())
+                .toList();
+
+        return Stream.concat(productResponses.stream(), bundleProductResponses.stream())
+                .collect(Collectors.toList());
     }
 }
