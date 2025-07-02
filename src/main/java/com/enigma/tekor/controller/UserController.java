@@ -33,7 +33,7 @@ public class UserController {
         private final UserService userService;
         private final JwtUtil jwtUtil;
 
-        @GetMapping("/me")
+        @GetMapping
         @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
         public ResponseEntity<ProfileResponse> getMyProfile(
                         @RequestHeader("Authorization") String token) {
@@ -44,7 +44,7 @@ public class UserController {
                 return ResponseEntity.ok(profile);
         }
 
-        @PatchMapping("/me")
+        @PatchMapping
         @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
         public ResponseEntity<CommonResponse<ProfileResponse>> updateProfile(
                         @Valid @RequestBody UpdateProfileRequest request) {
@@ -60,7 +60,7 @@ public class UserController {
                                 .build());
         }
 
-        @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
         @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
         public ResponseEntity<CommonResponse<ProfilePictureResponse>> updateProfilePicture(
                         @RequestParam("avatar") MultipartFile file) {
