@@ -33,6 +33,7 @@ public class UserController {
         private final UserService userService;
         private final JwtUtil jwtUtil;
 
+        @GetMapping
         @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
         public ResponseEntity<ProfileResponse> getMyProfile(
                         @RequestHeader("Authorization") String token) {
@@ -43,6 +44,7 @@ public class UserController {
                 return ResponseEntity.ok(profile);
         }
 
+        @PatchMapping
         @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
         public ResponseEntity<CommonResponse<ProfileResponse>> updateProfile(
                         @Valid @RequestBody UpdateProfileRequest request) {
