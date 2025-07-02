@@ -36,4 +36,6 @@ public class UserAnswer {
     @ManyToOne
     @JoinColumn(name = "selected_option_id", nullable = false)
     private Option selectedOption;
+
+    private Boolean isCorrect;
 }

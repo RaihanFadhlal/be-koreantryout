@@ -10,4 +10,5 @@ public interface BundleService {
     BundleResponse create(BundleRequest request);
     List<BundleResponse> getAll();
     BundleResponse getById(UUID id);
+    com.enigma.tekor.entity.Bundle getBundleById(UUID id);
 }

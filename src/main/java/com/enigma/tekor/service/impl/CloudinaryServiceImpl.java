@@ -25,4 +25,14 @@ public class CloudinaryServiceImpl implements CloudinaryService {
     public void delete(String publicId) throws Exception {
         cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
     }
+
+    @Override
+    public String extractPublicIdFromUrl(String imageUrl) {
+        int startIndex = imageUrl.lastIndexOf('/') + 1;
+        int endIndex = imageUrl.lastIndexOf('.');
+        if (startIndex != -1 && endIndex != -1 && endIndex > startIndex) {
+            return imageUrl.substring(startIndex, endIndex);
+        }
+        return null;
+    }
 }
