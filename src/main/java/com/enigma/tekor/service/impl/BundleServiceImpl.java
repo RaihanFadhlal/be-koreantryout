@@ -10,7 +10,7 @@ import com.enigma.tekor.repository.BundlePackageRepository;
 import com.enigma.tekor.repository.BundleRepository;
 import com.enigma.tekor.service.BundleService;
 import com.enigma.tekor.service.TestPackageService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,12 +19,21 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 public class BundleServiceImpl implements BundleService {
 
     private final BundleRepository bundleRepository;
     private final TestPackageService testPackageService;
     private final BundlePackageRepository bundlePackageRepository;
+
+    public BundleServiceImpl(
+            BundleRepository bundleRepository,
+            @Lazy TestPackageService testPackageService,
+            BundlePackageRepository bundlePackageRepository
+    ) {
+        this.bundleRepository = bundleRepository;
+        this.testPackageService = testPackageService;
+        this.bundlePackageRepository = bundlePackageRepository;
+    }
 
     @Transactional(rollbackFor = Exception.class)
     @Override

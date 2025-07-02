@@ -1,61 +1,70 @@
 package com.enigma.tekor.controller;
 
-import com.enigma.tekor.dto.request.CreateTestPackageRequest;
 import com.enigma.tekor.dto.response.CommonResponse;
+import com.enigma.tekor.dto.response.ProductResponse;
+import com.enigma.tekor.dto.request.CreateTestPackageRequest;
+import com.enigma.tekor.dto.request.UpdateTestPackageRequest;
+import com.enigma.tekor.dto.response.TestPackageResponse;
 import com.enigma.tekor.service.TestPackageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import com.enigma.tekor.dto.request.UpdateTestPackageRequest;
-import com.enigma.tekor.dto.response.TestPackageResponse;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/test-packages")
 @RequiredArgsConstructor
 public class TestPackageController {
-
     private final TestPackageService testPackageService;
 
-    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<CommonResponse<Void>> createTestPackage(
-            @ModelAttribute CreateTestPackageRequest request
-    ) {
+    @PreAuthorize("hasRole('ADMIN')")
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CommonResponse<String>> createTestPackageFromExcel(@ModelAttribute CreateTestPackageRequest request) {
         testPackageService.createTestPackageFromExcel(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CommonResponse.<Void>builder()
-                .status(HttpStatus.CREATED.name())
-                .message("Test package created successfully")
-                .build());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(CommonResponse.<String>builder()
+                        .message("Successfully created test package")
+                        .build());
     }
 
-    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse<TestPackageResponse>> updateTestPackage(@PathVariable String id, @RequestBody UpdateTestPackageRequest request) {
-        TestPackageResponse updatedTestPackage = testPackageService.update(id, request);
+        TestPackageResponse updated = testPackageService.update(id, request);
         return ResponseEntity.ok(CommonResponse.<TestPackageResponse>builder()
-                .status(HttpStatus.OK.name())
-                .message("Test package updated successfully")
-                .data(updatedTestPackage)
+                .message("Successfully updated test package")
+                .data(updated)
                 .build());
     }
 
-    @GetMapping("/{id}")
+    @GetMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CommonResponse<TestPackageResponse>> getTestPackageById(@PathVariable String id) {
-        TestPackageResponse testPackage = testPackageService.getById(id);
+        TestPackageResponse testPackageResponse = testPackageService.getById(id);
         return ResponseEntity.ok(CommonResponse.<TestPackageResponse>builder()
-                .status(HttpStatus.OK.name())
-                .message("Test package retrieved successfully")
-                .data(testPackage)
+                .message("Successfully get test package by id")
+                .data(testPackageResponse)
                 .build());
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<CommonResponse<Void>> deleteTestPackage(@PathVariable String id) {
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping(path = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CommonResponse<String>> deleteTestPackage(@PathVariable String id) {
         testPackageService.delete(id);
-        return ResponseEntity.ok(CommonResponse.<Void>builder()
-                .status(HttpStatus.OK.name())
-                .message("Test package deleted successfully")
+        return ResponseEntity.ok(CommonResponse.<String>builder()
+                .message("Successfully deleted test package")
+                .build());
+    }
+
+    @GetMapping
+    public ResponseEntity<CommonResponse<List<ProductResponse>>> getAllPackagesAndBundles() {
+        List<ProductResponse> productResponses = testPackageService.getAllPackagesAndBundles();
+        return ResponseEntity.ok(CommonResponse.<List<ProductResponse>>builder()
+                .message("Successfully get all packages and bundles")
+                .data(productResponses)
                 .build());
     }
 }
