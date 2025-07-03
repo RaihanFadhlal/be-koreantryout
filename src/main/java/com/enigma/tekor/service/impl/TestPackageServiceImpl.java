@@ -121,6 +121,7 @@ public class TestPackageServiceImpl implements TestPackageService {
                 .id(String.valueOf(testPackage.getId()))
                 .name(testPackage.getName())
                 .description(testPackage.getDescription())
+                .imageUrl(testPackage.getImageUrl())
                 .price(testPackage.getPrice().doubleValue())
                 .discountPrice(testPackage.getDiscountPrice().doubleValue())
                 .build();
