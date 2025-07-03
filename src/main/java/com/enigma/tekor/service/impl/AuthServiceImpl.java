@@ -206,4 +206,30 @@ public class AuthServiceImpl implements AuthService {
 
         passwordResetTokenRepository.delete(token);
     }
+
+    @Override
+    @Transactional
+    public TokenResponse refreshToken(String refreshToken) {
+        try {
+            if (refreshToken == null || !jwtUtil.validateToken(refreshToken)) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token");
+            }
+
+            String username = jwtUtil.getUsernameFromToken(refreshToken);
+            User user = userService.findByUsername(username);
+
+            if (user == null) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found");
+            }
+
+            String newAccessToken = jwtUtil.generateAccessToken(user);
+
+            return TokenResponse.builder()
+                    .accessToken(newAccessToken)
+                    .refreshToken(refreshToken)
+                    .build();
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid refresh token", e);
+        }
+    }
 }

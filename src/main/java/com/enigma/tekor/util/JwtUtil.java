@@ -67,6 +67,7 @@ public class JwtUtil {
                 .withSubject(user.getId().toString())
                 .withExpiresAt(Instant.now().plusSeconds(refreshTokenExpiration))
                 .withIssuedAt(Instant.now())
+                .withClaim("username", user.getUsername())
                 .sign(algorithm);
     }
     
@@ -107,7 +108,7 @@ public class JwtUtil {
                 .build();
     }
 
-    public boolean verifyToken(String token) {
+    public boolean validateToken(String token) {
         try {
             Algorithm algorithm = Algorithm.HMAC256(jwtSecret.getBytes(StandardCharsets.UTF_8));
             JWTVerifier verifier = JWT.require(algorithm).withIssuer(appName).build();
@@ -115,6 +116,17 @@ public class JwtUtil {
             return true;
         } catch (JWTVerificationException e) {
             return false;
+        }
+    }
+
+    public String getUsernameFromToken(String token) {
+        try {
+            JWTVerifier verifier = getVerifier();
+            DecodedJWT decodedJWT = verifier.verify(token);
+            return decodedJWT.getClaim("username").asString();
+        } catch (JWTVerificationException e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
+            throw e;
         }
     }
 

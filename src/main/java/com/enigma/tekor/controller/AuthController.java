@@ -15,10 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.enigma.tekor.dto.request.ForgotPasswordRequest;
 import com.enigma.tekor.dto.request.LoginRequest;
+import com.enigma.tekor.dto.request.RefreshTokenRequest;
 import com.enigma.tekor.dto.request.RegisterRequest;
 import com.enigma.tekor.dto.request.ResetPasswordRequest;
 import com.enigma.tekor.dto.response.CommonResponse;
 import com.enigma.tekor.dto.response.LoginResponse;
+import com.enigma.tekor.dto.response.TokenResponse;
 import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.service.AuthService;
 
@@ -102,6 +104,19 @@ public class AuthController {
         CommonResponse<?> response = CommonResponse.builder()
                 .status(HttpStatus.OK.getReasonPhrase())
                 .message("Your password has been successfully reset. Please log in.")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<CommonResponse<TokenResponse>> refreshToken(@RequestBody RefreshTokenRequest request) {
+        TokenResponse tokenResponse = authService.refreshToken(request.getRefreshToken());
+
+        CommonResponse<TokenResponse> response = CommonResponse.<TokenResponse>builder()
+                .status("success")
+                .message("Token refreshed successfully.")
+                .data(tokenResponse)
                 .build();
 
         return ResponseEntity.ok(response);
