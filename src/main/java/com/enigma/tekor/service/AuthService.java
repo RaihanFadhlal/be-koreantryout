@@ -7,6 +7,7 @@ import com.enigma.tekor.dto.request.LoginRequest;
 import com.enigma.tekor.dto.request.RegisterRequest;
 import com.enigma.tekor.dto.request.ResetPasswordRequest;
 import com.enigma.tekor.dto.response.LoginResponse;
+import com.enigma.tekor.dto.response.TokenResponse;
 import com.enigma.tekor.dto.response.UserResponse;
 
 public interface AuthService {
@@ -16,4 +17,5 @@ public interface AuthService {
     void requestPasswordReset(ForgotPasswordRequest forgotPasswordRequest);
     void resetPassword(ResetPasswordRequest resetPasswordRequest);
     void validatePasswordResetToken(String token);
+    TokenResponse refreshToken(String refreshToken);
 }
