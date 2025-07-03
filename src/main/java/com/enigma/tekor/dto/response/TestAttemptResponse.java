@@ -18,7 +18,6 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 public class TestAttemptResponse {
-
     private String id;
     private String userId;
     private String packageId;
@@ -29,5 +28,4 @@ public class TestAttemptResponse {
     private TestAttemptStatus status;
     private String aiEvaluationResult;
     private Date createdAt;
-    
 }

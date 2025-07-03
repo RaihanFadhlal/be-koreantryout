@@ -1,7 +1,10 @@
 package com.enigma.tekor.service.impl;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -167,5 +170,41 @@ public class TransactionServiceImpl implements TransactionService {
     public Transaction getTransactionById(String id) {
         return transactionRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new NotFoundException("Transaction not found"));
+    }
+
+    @Override
+    public List<TransactionResponse> getHistory() {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userService.getByEmail(email);
+
+        List<Transaction> transactions = transactionRepository.findByUserWithDetails(user);
+
+        return transactions.stream()
+                .map(this::toTransactionResponse)
+                .collect(Collectors.toList());
+    }
+
+    private TransactionResponse toTransactionResponse(Transaction transaction) {
+        return toTransactionResponse(transaction, null);
+    }
+
+    private TransactionResponse toTransactionResponse(Transaction transaction, String redirectUrl) {
+        String packageName = Optional.ofNullable(transaction.getTestPackage())
+                                    .map(TestPackage::getName)
+                                    .orElse(null);
+
+        String bundleName = Optional.ofNullable(transaction.getBundle())
+                                    .map(Bundle::getName)
+                                    .orElse(null);
+
+        return TransactionResponse.builder()
+                .orderId(transaction.getMidtransOrderId())
+                .transactionStatus(transaction.getStatus().name())
+                .amount(transaction.getAmount())
+                .packageName(packageName)
+                .bundleName(bundleName)
+                .createdAt(transaction.getCreatedAt())
+                .redirectUrl(redirectUrl)
+                .build();
     }
 }

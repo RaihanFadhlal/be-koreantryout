@@ -1,5 +1,6 @@
 package com.enigma.tekor.service;
 
+import java.util.List;
 import java.util.Map;
 
 import com.enigma.tekor.dto.request.TransactionRequest;
@@ -11,4 +12,5 @@ public interface TransactionService {
     void handleMidtransNotification(Map<String, Object> payload);
     TransactionResponse checkTransactionStatus(String orderId);
     Transaction getTransactionById(String id);
+    List<TransactionResponse> getHistory();
 }
