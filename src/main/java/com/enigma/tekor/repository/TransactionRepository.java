@@ -17,4 +17,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     Optional<Transaction> findByMidtransOrderId(String midtransOrderId);
     @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.testPackage LEFT JOIN FETCH t.bundle WHERE t.user = :user ORDER BY t.createdAt DESC")
     List<Transaction> findByUserWithDetails(@Param("user") User user);
+
+    @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.testPackage LEFT JOIN FETCH t.bundle WHERE t.user.id = :userId")
+    List<Transaction> findByUserId(@Param("userId") UUID userId);
 }

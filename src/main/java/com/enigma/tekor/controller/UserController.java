@@ -1,5 +1,7 @@
 package com.enigma.tekor.controller;
 
+import java.util.List;
+
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -19,6 +21,7 @@ import com.enigma.tekor.dto.request.UpdateProfileRequest;
 import com.enigma.tekor.dto.response.CommonResponse;
 import com.enigma.tekor.dto.response.ProfilePictureResponse;
 import com.enigma.tekor.dto.response.ProfileResponse;
+import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.service.UserService;
 import com.enigma.tekor.util.JwtUtil;
 
@@ -93,4 +96,17 @@ public class UserController {
                                 .message("Password updated successfully.")
                                 .build());
         }
+
+
+         @GetMapping("/all")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<CommonResponse<List<UserResponse>>> getAllUsers() {
+        List<UserResponse> users = userService.getAllUsers();
+    
+        return ResponseEntity.ok(CommonResponse.<List<UserResponse>>builder()
+            .status("success")
+            .message("Successfully retrieved all users")
+            .data(users)
+            .build());
+}
 }

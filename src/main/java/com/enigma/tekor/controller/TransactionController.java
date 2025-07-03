@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.enigma.tekor.dto.request.TransactionRequest;
 import com.enigma.tekor.dto.response.CommonResponse;
+import com.enigma.tekor.dto.response.TransactionDetailResponse;
 import com.enigma.tekor.dto.response.TransactionResponse;
 import com.enigma.tekor.service.TransactionService;
 
@@ -63,4 +64,19 @@ public class TransactionController {
                 .build();
         return ResponseEntity.ok(response);
     }
+
+
+    @GetMapping("/{userId}")
+    public ResponseEntity<CommonResponse<List<TransactionDetailResponse>>> getTransactionsByUserId(
+            @PathVariable String userId) {
+        List<TransactionDetailResponse> transactions = transactionService.getTransactionsByUserId(userId);
+        
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(CommonResponse.<List<TransactionDetailResponse>>builder()
+                        .status(String.valueOf(HttpStatus.OK.value()))
+                        .message("Successfully get transactions by user ID")
+                        .data(transactions)
+                        .build());
+    }
+
 }

@@ -1,6 +1,7 @@
 package com.enigma.tekor.service.impl;
 
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -13,6 +14,7 @@ import com.enigma.tekor.dto.request.ChangePasswordRequest;
 import com.enigma.tekor.dto.request.UpdateProfileRequest;
 import com.enigma.tekor.dto.response.ProfilePictureResponse;
 import com.enigma.tekor.dto.response.ProfileResponse;
+import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.entity.User;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.exception.InvalidFileException;
@@ -158,5 +160,17 @@ public class UserServiceImpl implements UserService {
     @Override
     public User update(User user) {
         return userRepository.save(user);
+    }
+
+
+    @Override
+    public List<UserResponse> getAllUsers() {
+    return userRepository.findAll().stream()
+            .map(user -> UserResponse.builder()
+                    .id(user.getId())  
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .build())
+            .toList();
     }
 }
