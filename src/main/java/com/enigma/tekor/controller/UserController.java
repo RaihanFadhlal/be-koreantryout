@@ -45,7 +45,7 @@ public class UserController {
         }
 
         @PatchMapping
-        @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+        @PreAuthorize("hasRole('USER')")
         public ResponseEntity<CommonResponse<ProfileResponse>> updateProfile(
                         @Valid @RequestBody UpdateProfileRequest request) {
 
@@ -77,13 +77,14 @@ public class UserController {
                                                 .build());
         }
 
+        @PreAuthorize("hasRole('ADMIN')")
         private String getCurrentUserId() {
                 String username = SecurityContextHolder.getContext().getAuthentication().getName();
                 return userService.getUserIdByUsername(username);
         }
 
-        @PostMapping("/change-password")
-        @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+        @PostMapping(value = "/change-password", consumes = MediaType.APPLICATION_JSON_VALUE)
+        @PreAuthorize("hasRole('USER')")
         public ResponseEntity<CommonResponse<String>> changePassword(
                         @Valid @RequestBody ChangePasswordRequest request) {
                 userService.changePassword(getCurrentUserId(), request);

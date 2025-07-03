@@ -109,16 +109,5 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/refresh-token")
-    public ResponseEntity<CommonResponse<TokenResponse>> refreshToken(@RequestBody RefreshTokenRequest request) {
-        TokenResponse tokenResponse = authService.refreshToken(request.getRefreshToken());
-
-        CommonResponse<TokenResponse> response = CommonResponse.<TokenResponse>builder()
-                .status("success")
-                .message("Token refreshed successfully.")
-                .data(tokenResponse)
-                .build();
-
-        return ResponseEntity.ok(response);
-    }
+    
 }

@@ -19,6 +19,6 @@ public class ChangePasswordRequest {
     @NotNull(message="New password cannot empty")
     private String newPassword;
 
-    @NotNull(message="Confirm password cannot empty")
-    private String confirmPassword;
+    @NotNull(message="Confirm new password cannot empty")
+    private String confirmNewPassword;
 }

@@ -15,6 +15,4 @@ import lombok.Setter;
 public class UpdateProfileRequest {
     @NotBlank(message = "Full name is required")
     private String fullName;
-    @NotBlank(message = "Username is required")
-    private String username;
 }
