@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.enigma.tekor.dto.request.TransactionRequest;
+import com.enigma.tekor.dto.response.TransactionDetailResponse;
 import com.enigma.tekor.dto.response.TransactionResponse;
 import com.enigma.tekor.entity.Transaction;
 
@@ -12,5 +13,8 @@ public interface TransactionService {
     void handleMidtransNotification(Map<String, Object> payload);
     TransactionResponse checkTransactionStatus(String orderId);
     Transaction getTransactionById(String id);
+
     List<TransactionResponse> getHistory();
+    
+    List<TransactionDetailResponse> getTransactionsByUserId(String userId);
 }
