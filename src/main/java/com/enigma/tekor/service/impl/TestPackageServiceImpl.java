@@ -88,6 +88,7 @@ public class TestPackageServiceImpl implements TestPackageService {
         TestPackage testPackage = new TestPackage();
         testPackage.setName(request.getName());
         testPackage.setDescription(request.getDescription());
+        testPackage.setImageUrl(request.getImageUrl());
         testPackage.setPrice(request.getPrice());
         testPackage.setDiscountPrice(request.getDiscountPrice());
         testPackage.setIsTrial(request.getPrice().compareTo(BigDecimal.ZERO) <= 0);
@@ -143,6 +144,8 @@ public class TestPackageServiceImpl implements TestPackageService {
                 .map(tp -> ProductResponse.builder()
                         .id(tp.getId())
                         .name(tp.getName())
+                        .description(tp.getDescription())
+                        .imageUrl(tp.getImageUrl())
                         .price(tp.getPrice())
                         .discountPrice(tp.getDiscountPrice())
                         .type("package")
@@ -154,6 +157,8 @@ public class TestPackageServiceImpl implements TestPackageService {
                 .map(br -> ProductResponse.builder()
                         .id(br.getId())
                         .name(br.getName())
+                        .description(br.getDescription())
+                        .imageUrl(br.getImageUrl())
                         .price(br.getPrice())
                         .type("bundle")
                         .build())

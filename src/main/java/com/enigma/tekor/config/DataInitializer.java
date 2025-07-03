@@ -85,6 +85,7 @@ public class DataInitializer implements CommandLineRunner {
             CreateTestPackageRequest request = CreateTestPackageRequest.builder()
                     .name("Dummy Test Package")
                     .description("This is a dummy test package created from an Excel file.")
+                    .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751525227/A_c3jx1r.jpg")
                     .price(new BigDecimal("100000"))
                     .discountPrice(new BigDecimal("80000"))
                     .file(multipartFile)
