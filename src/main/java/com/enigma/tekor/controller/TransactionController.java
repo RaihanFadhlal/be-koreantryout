@@ -1,5 +1,6 @@
 package com.enigma.tekor.controller;
 
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.http.HttpStatus;
@@ -49,5 +50,17 @@ public class TransactionController {
     public ResponseEntity<TransactionResponse> getTransactionStatus(@PathVariable String orderId) {
         TransactionResponse transactionResponse = transactionService.checkTransactionStatus(orderId);
         return ResponseEntity.ok(transactionResponse);
+    }
+
+    @GetMapping("/history")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<CommonResponse<List<TransactionResponse>>> getTransactionHistory() {
+        List<TransactionResponse> transactionResponses = transactionService.getHistory();
+        CommonResponse<List<TransactionResponse>> response = CommonResponse.<List<TransactionResponse>>builder()
+                .status(HttpStatus.OK.getReasonPhrase())
+                .message("Transaction history retrieved successfully.")
+                .data(transactionResponses)
+                .build();
+        return ResponseEntity.ok(response);
     }
 }

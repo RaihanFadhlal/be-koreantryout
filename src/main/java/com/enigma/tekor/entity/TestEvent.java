@@ -32,7 +32,7 @@ import lombok.Setter;
 public class TestEvent {
 
     @Id
-     @GeneratedValue(strategy = GenerationType.UUID)
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -46,5 +46,5 @@ public class TestEvent {
     @CreationTimestamp
     @Column(name = "event_timestamp", updatable = false)
     private LocalDateTime eventTimestamp;
-    
+
 }
