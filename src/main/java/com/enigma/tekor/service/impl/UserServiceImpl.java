@@ -17,7 +17,6 @@ import com.enigma.tekor.entity.User;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.exception.InvalidFileException;
 import com.enigma.tekor.exception.UserNotFoundException;
-import com.enigma.tekor.exception.UsernameAlreadyExistsException;
 import com.enigma.tekor.repository.UserRepository;
 import com.enigma.tekor.service.CloudinaryService;
 import com.enigma.tekor.service.UserService;
@@ -48,15 +47,7 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findById(UUID.fromString(userId))
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-        if (!user.getUsername().equals(request.getUsername())) {
-            userRepository.findByUsername(request.getUsername())
-                    .ifPresent(u -> {
-                        throw new UsernameAlreadyExistsException("Username already taken");
-                    });
-        }
-
         user.setFullName(request.getFullName());
-        user.setUsername(request.getUsername());
 
         User updatedUser = userRepository.save(user);
         return convertToProfileResponse(updatedUser);
@@ -109,7 +100,7 @@ public class UserServiceImpl implements UserService {
             throw new BadRequestException("Invalid current password");
         }
 
-        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+        if (!request.getNewPassword().equals(request.getConfirmNewPassword())) {
             throw new BadRequestException("New password and confirmation password do not match");
         }
 

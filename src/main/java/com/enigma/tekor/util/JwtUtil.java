@@ -130,5 +130,16 @@ public class JwtUtil {
         }
     }
 
+    public String getSubjectFromToken(String token) {
+        try {
+            JWTVerifier verifier = getVerifier();
+            DecodedJWT decodedJWT = verifier.verify(token);
+            return decodedJWT.getSubject();
+        } catch (JWTVerificationException e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
+            throw e;
+        }
+    }
+
     
 }
