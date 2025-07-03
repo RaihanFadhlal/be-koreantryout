@@ -51,6 +51,9 @@ public class TestPackage {
     @Column(name = "created_at", updatable = false)
     private Date createdAt;
 
+    @Column(name = "image_url")
+    private String imageUrl = null;
+
     @ManyToMany
     @JoinTable(
         name = "test_package_questions",

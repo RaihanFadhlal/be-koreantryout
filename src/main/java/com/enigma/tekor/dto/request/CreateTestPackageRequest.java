@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 public class CreateTestPackageRequest {
     private String name;
     private String description;
+    private String imageUrl;
     private BigDecimal price;
     private BigDecimal discountPrice;
     private MultipartFile file;

@@ -17,6 +17,7 @@ public class BundleResponse {
     private UUID id;
     private String name;
     private String description;
+    private String imageUrl;
     private BigDecimal price;
     private List<PackageInBundleResponse> packages;
 }
