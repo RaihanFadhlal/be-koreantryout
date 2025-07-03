@@ -1,6 +1,7 @@
 package com.enigma.tekor.controller;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -42,7 +43,7 @@ public class UserController {
                         @RequestHeader("Authorization") String token) {
 
                 String userId = jwtUtil.getUserInfoByToken(token.replace("Bearer ", "")).get("userId");
-                ProfileResponse profile = userService.getProfileById(userId);
+                ProfileResponse profile = userService.getProfileById(UUID.fromString(userId));
 
                 return ResponseEntity.ok(profile);
         }
@@ -81,7 +82,7 @@ public class UserController {
         }
 
         @PreAuthorize("hasRole('ADMIN')")
-        private String getCurrentUserId() {
+        private UUID getCurrentUserId() {
                 String username = SecurityContextHolder.getContext().getAuthentication().getName();
                 return userService.getUserIdByUsername(username);
         }
