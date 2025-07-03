@@ -20,7 +20,7 @@ import com.enigma.tekor.service.BundleService;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/bundles")
+@RequestMapping("/api/v1/bundles")
 @RequiredArgsConstructor
 public class BundleController {
 
