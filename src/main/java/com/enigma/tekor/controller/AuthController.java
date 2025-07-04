@@ -37,6 +37,9 @@ public class AuthController {
     @Value("${app.frontend.url}")
     private String frontendUrl;
 
+    @Value("${app.frontend.verification-handler-url}")
+    private String verificationHandlerUrl;
+
     @PostMapping("/register")
     public ResponseEntity<CommonResponse<UserResponse>> registerUser(@Valid @RequestBody RegisterRequest request) {
         UserResponse userResponse = authService.register(request);
@@ -64,13 +67,11 @@ public class AuthController {
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<Void> verifyEmail(@RequestParam("userId") UUID userId) {
-        authService.verifyEmail(userId);
-
-        String loginUrl = frontendUrl + "/login";
+    public ResponseEntity<Void> verifyEmail(@RequestParam("token") String token) {
+        authService.verifyEmail(token);
 
         return ResponseEntity.status(HttpStatus.FOUND)
-                .location(URI.create(loginUrl))
+                .location(URI.create(verificationHandlerUrl + "?status=verified"))
                 .build();
     }
 
