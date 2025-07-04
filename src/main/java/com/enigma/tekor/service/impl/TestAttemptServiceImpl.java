@@ -1,5 +1,13 @@
 package com.enigma.tekor.service.impl;
 
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
 import com.enigma.tekor.constant.TestAttemptStatus;
 import com.enigma.tekor.dto.request.SaveAnswerRequest;
 import com.enigma.tekor.dto.request.TestAttemptRequest;
@@ -15,15 +23,9 @@ import com.enigma.tekor.service.TestAttemptService;
 import com.enigma.tekor.service.TransactionService;
 import com.enigma.tekor.service.UserAnswerService;
 import com.enigma.tekor.service.UserService;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -140,6 +142,12 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         attempt.setEndTime(new Date());
         attempt.setStatus(TestAttemptStatus.COMPLETED);
         testAttemptRepository.save(attempt);
+    }
+
+    @Override
+    public TestAttempt getTestAttemptById(String id) {
+        return testAttemptRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new NotFoundException("Test attempt with ID: " + id + " not found"));
     }
 
     private TestAttemptResponse mapToResponse(TestAttempt testAttempt) {
