@@ -6,4 +6,6 @@ import com.enigma.tekor.entity.UserAnswer;
 
 public interface UserAnswerService {
     UserAnswer saveAnswer(SaveAnswerRequest request, TestAttempt attempt);
+    Integer calculateScore(TestAttempt attempt);
+
 }

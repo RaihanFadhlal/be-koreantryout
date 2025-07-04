@@ -1,15 +1,5 @@
 package com.enigma.tekor.service.impl;
 
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-
 import com.enigma.tekor.constant.TestAttemptStatus;
 import com.enigma.tekor.dto.request.SaveAnswerRequest;
 import com.enigma.tekor.dto.request.TestAttemptRequest;
@@ -28,11 +18,20 @@ import com.enigma.tekor.exception.NotFoundException;
 import com.enigma.tekor.repository.TestAttemptRepository;
 import com.enigma.tekor.service.TestAttemptService;
 import com.enigma.tekor.service.TransactionService;
+import com.enigma.tekor.service.QuestionService;
 import com.enigma.tekor.service.UserAnswerService;
 import com.enigma.tekor.service.UserService;
-
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -41,6 +40,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
     private final TransactionService transactionService;
     private final UserService userService;
     private final UserAnswerService userAnswerService;
+    private final QuestionService questionService;
 
     @Override
     @Transactional
@@ -125,6 +125,9 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         }
         userAnswerService.saveAnswer(request, attempt);
 
+        Integer score = userAnswerService.calculateScore(attempt);
+        attempt.setScore(Float.valueOf(score));
+
         attempt.setRemainingDuration(request.getRemainingTimeInSeconds());
         testAttemptRepository.save(attempt);
     }
@@ -146,15 +149,12 @@ public class TestAttemptServiceImpl implements TestAttemptService {
             throw new BadRequestException("This test is not in progress");
         }
 
+        Integer score = userAnswerService.calculateScore(attempt);
+
         attempt.setEndTime(new Date());
         attempt.setStatus(TestAttemptStatus.COMPLETED);
+        attempt.setScore(Float.valueOf(score));
         testAttemptRepository.save(attempt);
-    }
-
-    @Override
-    public TestAttempt getTestAttemptById(String id) {
-        return testAttemptRepository.findById(UUID.fromString(id))
-                .orElseThrow(() -> new NotFoundException("Test attempt with ID: " + id + " not found"));
     }
 
     private TestAttemptResponse mapToResponse(TestAttempt testAttempt) {
@@ -173,90 +173,88 @@ public class TestAttemptServiceImpl implements TestAttemptService {
     }
 
 
-    
-
     @Override
     public UserTestAttemptResponse getUserTestAttempt(String userId) {
         UUID userUuid = UUID.fromString(userId);
-            
+
         List<Transaction> successfulTransactions = transactionService.getSuccessfulTransactionsByUserId(userUuid);
-            
+
         List<TestAttempt> inProgressAttempts = testAttemptRepository.findByUserIdAndStatus(
                 userUuid,
                 TestAttemptStatus.IN_PROGRESS);
 
-          
+
         return UserTestAttemptResponse.builder()
                 .readyToStart(mapReadyPackages(successfulTransactions))
                 .inProgress(mapInProgressAttempts(inProgressAttempts))
                 .build();
+    }
+
+    private List<ReadyTestPackage> mapReadyPackages(List<Transaction> transactions) {
+        return transactions.stream()
+                .map(this::mapToReadyTestPackage)
+                .collect(Collectors.toList());
+    }
+
+    private List<InProgressAttempt> mapInProgressAttempts(List<TestAttempt> attempts) {
+        return attempts.stream()
+                .map(this::mapToInProgressAttempt)
+                .collect(Collectors.toList());
+    }
+
+    private ReadyTestPackage mapToReadyTestPackage(Transaction transaction) {
+        return ReadyTestPackage.builder()
+                .transactionId(transaction.getId().toString())
+                .testPackage(mapToTestPackageResponse(transaction.getTestPackage()))
+                .purchaseDate(convertToDate(transaction.getCreatedAt()))
+                .build();
+    }
+
+    private InProgressAttempt mapToInProgressAttempt(TestAttempt attempt) {
+        return InProgressAttempt.builder()
+                .attemptId(attempt.getId().toString())
+                .testPackage(mapToTestPackageResponse(attempt.getTestPackage()))
+                .startTime(attempt.getStartTime())
+                .remainingDuration(attempt.getRemainingDuration())
+                .build();
+    }
+
+    private TestPackageResponse mapToTestPackageResponse(TestPackage testPackage) {
+        if (testPackage == null) {
+            return null;
         }
 
-        private List<ReadyTestPackage> mapReadyPackages(List<Transaction> transactions) {
-            return transactions.stream()
-                    .map(this::mapToReadyTestPackage)
-                    .collect(Collectors.toList());
-        }
+        return TestPackageResponse.builder()
+                .id(testPackage.getId().toString())
+                .name(testPackage.getName())
+                .description(testPackage.getDescription())
+                .imageUrl(testPackage.getImageUrl())
+                .price(testPackage.getPrice().doubleValue())
+                .discountPrice(testPackage.getDiscountPrice().doubleValue())
+                .build();
+    }
 
-        private List<InProgressAttempt> mapInProgressAttempts(List<TestAttempt> attempts) {
-            return attempts.stream()
-                    .map(this::mapToInProgressAttempt)
-                    .collect(Collectors.toList());
-        }
-
-        private ReadyTestPackage mapToReadyTestPackage(Transaction transaction) {
-            return ReadyTestPackage.builder()
-                    .transactionId(transaction.getId().toString())
-                    .testPackage(mapToTestPackageResponse(transaction.getTestPackage()))
-                    .purchaseDate(convertToDate(transaction.getCreatedAt()))
-                    .build();
-        }
-
-        private InProgressAttempt mapToInProgressAttempt(TestAttempt attempt) {
-            return InProgressAttempt.builder()
-                    .attemptId(attempt.getId().toString())
-                    .testPackage(mapToTestPackageResponse(attempt.getTestPackage()))
-                    .startTime(attempt.getStartTime())
-                    .remainingDuration(attempt.getRemainingDuration()) 
-                    .build();
-        }
-
-        private TestPackageResponse mapToTestPackageResponse(TestPackage testPackage) {
-            if (testPackage == null) {
-                return null;
-            }
-
-            return TestPackageResponse.builder()
-                    .id(testPackage.getId().toString())
-                    .name(testPackage.getName())
-                    .description(testPackage.getDescription())
-                    .imageUrl(testPackage.getImageUrl())
-                    .price(testPackage.getPrice().doubleValue()) 
-                    .discountPrice(testPackage.getDiscountPrice().doubleValue()) 
-                    .build();
-        }
-
-        private Date convertToDate(LocalDateTime localDateTime) {
-            return localDateTime != null
-                    ? Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant())
-                    : null;
-        }
-
-        
-
-
+    private Date convertToDate(LocalDateTime localDateTime) {
+        return localDateTime != null
+                ? Date.from(localDateTime.atZone(ZoneId.systemDefault()).toInstant())
+                : null;
+    }
 
     @Override
     public List<TestAttemptResponse> getTestAttemptByUserId(String userId) {
-    UUID userUuid = UUID.fromString(userId);
-    List<TestAttempt> attempts = testAttemptRepository.findByUserIdAndStatus(
-        userUuid, 
-        TestAttemptStatus.COMPLETED
-    );
-    return attempts.stream()
-            .map(this::mapToResponse)
-            .collect(Collectors.toList());
+        UUID userUuid = UUID.fromString(userId);
+        List<TestAttempt> attempts = testAttemptRepository.findByUserIdAndStatus(
+                userUuid,
+                TestAttemptStatus.COMPLETED
+        );
+        return attempts.stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
     }
-    
 
+    @Override
+    public TestAttempt getTestAttemptById(String id) {
+        return testAttemptRepository.findById(UUID.fromString(id))
+                .orElseThrow(() -> new NotFoundException("Test attempt with ID: " + id + " not found"));
+    }
 }
