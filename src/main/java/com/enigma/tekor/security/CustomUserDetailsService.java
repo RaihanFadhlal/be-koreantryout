@@ -14,14 +14,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
-     private final UserRepository userRepository;
-
-    // @Override
-    // public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-    //     return userRepository.findByUsername(username)
-    //             .map(CustomUserDetails::new)
-    //             .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-    // }
+    private final UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {

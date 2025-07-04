@@ -17,7 +17,10 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.enigma.tekor.constant.TransactionStatus;
 import com.enigma.tekor.dto.request.TransactionRequest;
+import com.enigma.tekor.dto.response.BundleResponse;
 import com.enigma.tekor.dto.response.CreateTransactionResponse;
+import com.enigma.tekor.dto.response.TestPackageResponse;
+import com.enigma.tekor.dto.response.TransactionDetailResponse;
 import com.enigma.tekor.dto.response.TransactionResponse;
 import com.enigma.tekor.entity.Bundle;
 import com.enigma.tekor.entity.TestPackage;
@@ -207,4 +210,50 @@ public class TransactionServiceImpl implements TransactionService {
                 .redirectUrl(redirectUrl)
                 .build();
     }
+
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TransactionDetailResponse> getTransactionsByUserId(String userId) {
+    
+     String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+     User currentUser = userService.getByEmail(currentUserEmail);
+    
+     if (!currentUser.getId().toString().equals(userId) && 
+         !currentUser.getRole().getName().equals("ROLE_ADMIN")) {
+         throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
+             "You don't have access to this transaction");
+     }
+     
+     
+     return transactionRepository.findByUserId(UUID.fromString(userId)).stream()
+             .map(this::mapToTransactionDetailResponse)
+             .collect(Collectors.toList());
+ }
+ 
+    private TransactionDetailResponse mapToTransactionDetailResponse(Transaction transaction) {
+     return TransactionDetailResponse.builder()
+             .id(transaction.getId().toString())
+             .midtransOrderId(transaction.getMidtransOrderId())
+             .amount(transaction.getAmount())
+             .status(transaction.getStatus().name())
+             .createdAt(transaction.getCreatedAt())
+             .testPackage(transaction.getTestPackage() != null ? 
+                    TestPackageResponse.builder()
+                            .id(transaction.getTestPackage().getId().toString())
+                            .name(transaction.getTestPackage().getName())
+                            .description(transaction.getTestPackage().getDescription()) 
+                            .price(transaction.getTestPackage().getPrice() != null ? 
+                                  transaction.getTestPackage().getPrice().doubleValue() : null) 
+                            .discountPrice(transaction.getTestPackage().getDiscountPrice() != null ? 
+                                  transaction.getTestPackage().getDiscountPrice().doubleValue() : null) 
+                            .build() : null)
+             .bundle(transaction.getBundle() != null ? 
+                     BundleResponse.builder()
+                             .id(transaction.getBundle().getId())
+                             .name(transaction.getBundle().getName())
+                             .build() : null)
+             .build();
+ }
+
 }

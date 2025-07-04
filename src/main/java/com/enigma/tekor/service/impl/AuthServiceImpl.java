@@ -140,7 +140,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void verifyEmail(UUID userId) {
-        User user = userService.findById(userId.toString());
+        User user = userService.findById(userId);
 
         if (Boolean.TRUE.equals(user.getIsVerified())) {
             throw new BadRequestException("Akun Anda sudah pernah diverifikasi sebelumnya.");
@@ -155,13 +155,18 @@ public class AuthServiceImpl implements AuthService {
     public void requestPasswordReset(ForgotPasswordRequest request) {
         User user = userService.getByEmail(request.getEmail());
 
+        if(user==null)return;
+
         String token = UUID.randomUUID().toString();
 
-        PasswordResetToken resetToken = PasswordResetToken.builder()
-                .token(token)
-                .user(user)
-                .expiryDate(LocalDateTime.now().plusMinutes(15))
-                .build();
+        LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
+
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByUserId(user.getId())
+                .orElse(new PasswordResetToken());
+
+        resetToken.setUser(user);
+        resetToken.setToken(token);
+        resetToken.setExpiryDate(expiryDate);
         passwordResetTokenRepository.save(resetToken);
 
         String resetUrl = baseUrl + resetPasswordPath + "?token=" + token;

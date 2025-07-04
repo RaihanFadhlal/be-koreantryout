@@ -1,6 +1,7 @@
 package com.enigma.tekor.service.impl;
 
 import java.time.ZoneId;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -13,6 +14,7 @@ import com.enigma.tekor.dto.request.ChangePasswordRequest;
 import com.enigma.tekor.dto.request.UpdateProfileRequest;
 import com.enigma.tekor.dto.response.ProfilePictureResponse;
 import com.enigma.tekor.dto.response.ProfileResponse;
+import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.entity.User;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.exception.InvalidFileException;
@@ -35,16 +37,16 @@ public class UserServiceImpl implements UserService {
     private String uploadDir;
 
     @Override
-    public ProfileResponse getProfileById(String userId) {
-        User user = userRepository.findById(UUID.fromString(userId))
+    public ProfileResponse getProfileById(UUID userId) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         return convertToProfileResponse(user);
     }
 
     @Override
-    public ProfileResponse updateProfile(String userId, UpdateProfileRequest request) {
-        User user = userRepository.findById(UUID.fromString(userId))
+    public ProfileResponse updateProfile(UUID userId, UpdateProfileRequest request) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         user.setFullName(request.getFullName());
@@ -54,18 +56,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public String getUserIdByUsername(String email) {
+    public UUID getUserIdByUsername(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new UserNotFoundException("User not found with email: " + email))
-                .getId().toString();
+                .getId();
     }
 
     @Override
-    public ProfilePictureResponse updateProfilePicture(String userId, MultipartFile file) {
+    public ProfilePictureResponse updateProfilePicture(UUID userId, MultipartFile file) {
         validateImageFile(file);
 
         try {
-            User user = userRepository.findById(UUID.fromString(userId))
+            User user = userRepository.findById(userId)
                     .orElseThrow(() -> new UserNotFoundException("User not found"));
 
             if (user.getImageUrl() != null && !user.getImageUrl().isEmpty()) {
@@ -92,8 +94,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void changePassword(String userId, ChangePasswordRequest request) {
-        User user = userRepository.findById(UUID.fromString(userId))
+    public void changePassword(UUID userId, ChangePasswordRequest request) {
+        User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found"));
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
@@ -150,13 +152,24 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public User findById(String id) {
-        return userRepository.findById(UUID.fromString(id))
+    public User findById(UUID id) {
+        return userRepository.findById(id)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + id));
     }
 
     @Override
     public User update(User user) {
         return userRepository.save(user);
+    }
+
+    @Override
+    public List<UserResponse> getAllUsers() {
+    return userRepository.findAll().stream()
+            .map(user -> UserResponse.builder()
+                    .id(user.getId())  
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .build())
+            .toList();
     }
 }
