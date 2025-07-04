@@ -49,7 +49,7 @@ public class JwtUtil {
                 .withSubject(user.getId().toString())
                 .withExpiresAt(Instant.now().plusSeconds(accessTokenExpiration))
                 .withIssuedAt(Instant.now())
-                .withClaim("role", user.getRole().getName())
+                .withClaim("role", user.getRole().getName().replace("ROLE_", ""))
                 .sign(algorithm);
     }
 

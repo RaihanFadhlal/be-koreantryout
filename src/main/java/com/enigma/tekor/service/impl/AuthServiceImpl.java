@@ -160,7 +160,7 @@ public class AuthServiceImpl implements AuthService {
         PasswordResetToken resetToken = PasswordResetToken.builder()
                 .token(token)
                 .user(user)
-                .expiryDate(LocalDateTime.now().plusMinutes(15)) // Token valid selama 15 menit
+                .expiryDate(LocalDateTime.now().plusMinutes(15))
                 .build();
         passwordResetTokenRepository.save(resetToken);
 
