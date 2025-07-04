@@ -1,6 +1,4 @@
 package com.enigma.tekor.service;
-
-
 import java.util.List;
 import java.util.UUID;
 

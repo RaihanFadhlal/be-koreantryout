@@ -154,10 +154,13 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(rollbackFor = Exception.class)
     public void requestPasswordReset(ForgotPasswordRequest request) {
         User user = userService.getByEmail(request.getEmail());
+
         if(user==null)return;
 
         String token = UUID.randomUUID().toString();
+
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
+
         PasswordResetToken resetToken = passwordResetTokenRepository.findByUserId(user.getId())
                 .orElse(new PasswordResetToken());
 

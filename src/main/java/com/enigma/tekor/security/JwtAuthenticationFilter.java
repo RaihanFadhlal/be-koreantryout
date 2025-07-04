@@ -6,13 +6,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import com.enigma.tekor.security.CustomUserDetails;
-import com.enigma.tekor.entity.User;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.auth0.jwt.exceptions.JWTVerificationException;
+import com.enigma.tekor.entity.User;
 import com.enigma.tekor.util.JwtUtil;
 
 import io.jsonwebtoken.ExpiredJwtException;
