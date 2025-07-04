@@ -99,7 +99,7 @@ public class UserController {
         }
 
 
-         @GetMapping("/all")
+        @GetMapping("/all")
         @PreAuthorize("hasRole('ADMIN')")
         public ResponseEntity<CommonResponse<List<UserResponse>>> getAllUsers() {
         List<UserResponse> users = userService.getAllUsers();

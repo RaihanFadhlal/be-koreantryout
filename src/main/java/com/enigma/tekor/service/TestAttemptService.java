@@ -5,6 +5,7 @@ import java.util.List;
 import com.enigma.tekor.dto.request.SaveAnswerRequest;
 import com.enigma.tekor.dto.request.TestAttemptRequest;
 import com.enigma.tekor.dto.response.TestAttemptResponse;
+import com.enigma.tekor.dto.response.UserTestAttemptResponse;
 import com.enigma.tekor.entity.TestAttempt;
 
 public interface TestAttemptService {
@@ -15,4 +16,7 @@ public interface TestAttemptService {
     void saveUserAnswer(String attemptId, SaveAnswerRequest request);
     void submitAttempt(String attemptId);
     TestAttempt getTestAttemptById(String id);
+    UserTestAttemptResponse getUserTestAttempt(String userId);
+    List<TestAttemptResponse> getTestAttemptByUserId(String userId);
+
 }
