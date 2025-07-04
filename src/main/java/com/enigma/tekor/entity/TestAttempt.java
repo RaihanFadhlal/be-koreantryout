@@ -79,4 +79,6 @@ public class TestAttempt {
 
     @OneToMany(mappedBy = "testAttempt", cascade = CascadeType.ALL)
     private List<TestEvent> testEvents;
+
+   
 }
