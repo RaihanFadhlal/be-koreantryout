@@ -1,7 +1,5 @@
 package com.enigma.tekor.service;
 
-import java.util.UUID;
-
 import com.enigma.tekor.dto.request.ForgotPasswordRequest;
 import com.enigma.tekor.dto.request.LoginRequest;
 import com.enigma.tekor.dto.request.RegisterRequest;
