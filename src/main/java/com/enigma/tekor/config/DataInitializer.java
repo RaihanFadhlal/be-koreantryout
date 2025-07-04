@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.enigma.tekor.constant.TransactionStatus;
 import com.enigma.tekor.dto.request.CreateTestPackageRequest;
+import com.enigma.tekor.dto.request.VocabularyRequest;
 import com.enigma.tekor.entity.Role;
 import com.enigma.tekor.entity.TestPackage;
 import com.enigma.tekor.entity.Transaction;
@@ -21,8 +22,10 @@ import com.enigma.tekor.entity.User;
 import com.enigma.tekor.repository.TestPackageRepository;
 import com.enigma.tekor.repository.TransactionRepository;
 import com.enigma.tekor.repository.UserRepository;
+import com.enigma.tekor.repository.VocabularyRepository;
 import com.enigma.tekor.service.RoleService;
 import com.enigma.tekor.service.TestPackageService;
+import com.enigma.tekor.service.VocabularyService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,6 +38,8 @@ public class DataInitializer implements CommandLineRunner {
     private final TestPackageService testPackageService;
     private final TestPackageRepository testPackageRepository;
     private final TransactionRepository transactionRepository;
+    private final VocabularyRepository vocabularyRepository;
+    private final VocabularyService vocabularyService;
 
     @Override
     public void run(String... args) throws Exception {
@@ -69,6 +74,10 @@ public class DataInitializer implements CommandLineRunner {
 
         if (transactionRepository.count() == 0) {
             createDummyTransaction(user);
+        }
+
+        if (vocabularyRepository.count() == 0) {
+            createDummyVocabulary();
         }
     }
 
@@ -108,6 +117,24 @@ public class DataInitializer implements CommandLineRunner {
             transaction.setMidtransOrderId("TEKOR-" + UUID.randomUUID().toString());
             transaction.setStatus(TransactionStatus.SUCCESS);
             transactionRepository.save(transaction);
+        }
+    }
+
+    private void createDummyVocabulary() {
+        try {
+            ClassPathResource resource = new ClassPathResource("DummyVocabularies.xlsx");
+            MockMultipartFile multipartFile = new MockMultipartFile(
+                    "file",
+                    resource.getFilename(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    resource.getInputStream()
+            );
+
+            vocabularyService.createVocabularyFromExcel(
+                    VocabularyRequest.builder().file(multipartFile).build()
+            );
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load dummy vocabularies", e);
         }
     }
 }

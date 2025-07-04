@@ -9,8 +9,10 @@ import org.springframework.stereotype.Repository;
 
 import com.enigma.tekor.constant.QuestionType;
 import com.enigma.tekor.entity.Question;
+import com.enigma.tekor.entity.TestPackage;
 
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, UUID> {
     List<Question> findByQuestionType(QuestionType questionType);
+    Integer countByTestPackagesContains(TestPackage testPackage);
 }
