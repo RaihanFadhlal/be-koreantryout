@@ -4,11 +4,17 @@ import com.enigma.tekor.dto.request.SaveAnswerRequest;
 import com.enigma.tekor.dto.request.TestAttemptRequest;
 import com.enigma.tekor.dto.response.CommonResponse;
 import com.enigma.tekor.dto.response.TestAttemptResponse;
+import com.enigma.tekor.dto.response.UserTestAttemptResponse;
+import com.enigma.tekor.entity.User;
+import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.service.TestAttemptService;
+import com.enigma.tekor.service.UserService;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,6 +25,7 @@ import java.util.List;
 public class TestAttemptController {
 
     private final TestAttemptService testAttemptService;
+    private final UserService userService;
 
     @PostMapping
     @PreAuthorize("hasRole('USER')")
@@ -88,4 +95,49 @@ public class TestAttemptController {
                 .data("OK")
                 .build());
     }
+
+
+    @GetMapping("/{userId}/attempts")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<CommonResponse<UserTestAttemptResponse>> getUserTestAttempts(
+            @PathVariable String userId) {
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userService.getByEmail(currentUsername);
+
+        if (!currentUser.getId().toString().equals(userId)) {
+            throw new BadRequestException("You can only view your own test attempts");
+        }
+
+        UserTestAttemptResponse response = testAttemptService.getUserTestAttempt(userId);
+        return ResponseEntity.ok(CommonResponse.<UserTestAttemptResponse>builder()
+                .status(HttpStatus.OK.getReasonPhrase())
+                .message("User test attempts retrieved successfully")
+                .data(response)
+                .build());
+    }
+    
+    @GetMapping("/{userId}/completed-attempts")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
+    public ResponseEntity<CommonResponse<List<TestAttemptResponse>>> getTestAttemptByUserId(
+    @PathVariable String userId
+    ) {
+
+    String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+    User currentUser = userService.getByEmail(currentUsername);
+    
+    if (!currentUser.getId().toString().equals(userId) && 
+        !SecurityContextHolder.getContext().getAuthentication()
+            .getAuthorities().stream()
+            .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"))) {
+        throw new BadRequestException("Unauthorized access");
+    }
+
+    List<TestAttemptResponse> responses = testAttemptService.getTestAttemptByUserId(userId);
+    return ResponseEntity.ok(CommonResponse.<List<TestAttemptResponse>>builder()
+            .status(HttpStatus.OK.getReasonPhrase())
+            .message("Completed test attempts retrieved successfully")
+            .data(responses)
+            .build());
+}
 }

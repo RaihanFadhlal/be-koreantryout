@@ -231,29 +231,37 @@ public class TransactionServiceImpl implements TransactionService {
              .collect(Collectors.toList());
  }
  
-    private TransactionDetailResponse mapToTransactionDetailResponse(Transaction transaction) {
+ private TransactionDetailResponse mapToTransactionDetailResponse(Transaction transaction) {
      return TransactionDetailResponse.builder()
              .id(transaction.getId().toString())
              .midtransOrderId(transaction.getMidtransOrderId())
              .amount(transaction.getAmount())
              .status(transaction.getStatus().name())
              .createdAt(transaction.getCreatedAt())
-             .testPackage(transaction.getTestPackage() != null ? 
-                    TestPackageResponse.builder()
-                            .id(transaction.getTestPackage().getId().toString())
-                            .name(transaction.getTestPackage().getName())
-                            .description(transaction.getTestPackage().getDescription()) 
-                            .price(transaction.getTestPackage().getPrice() != null ? 
-                                  transaction.getTestPackage().getPrice().doubleValue() : null) 
-                            .discountPrice(transaction.getTestPackage().getDiscountPrice() != null ? 
-                                  transaction.getTestPackage().getDiscountPrice().doubleValue() : null) 
-                            .build() : null)
-             .bundle(transaction.getBundle() != null ? 
-                     BundleResponse.builder()
-                             .id(transaction.getBundle().getId())
-                             .name(transaction.getBundle().getName())
-                             .build() : null)
+             .testPackage(transaction.getTestPackage() != null ? TestPackageResponse.builder()
+                     .id(transaction.getTestPackage().getId().toString())
+                     .name(transaction.getTestPackage().getName())
+                     .description(transaction.getTestPackage().getDescription())
+                     .price(transaction.getTestPackage().getPrice() != null
+                             ? transaction.getTestPackage().getPrice().doubleValue()
+                             : null)
+                     .discountPrice(transaction.getTestPackage().getDiscountPrice() != null
+                             ? transaction.getTestPackage().getDiscountPrice().doubleValue()
+                             : null)
+                     .build() : null)
+             .bundle(transaction.getBundle() != null ? BundleResponse.builder()
+                     .id(transaction.getBundle().getId())
+                     .name(transaction.getBundle().getName())
+                     .build() : null)
              .build();
  }
+ 
+ @Override
+public List<Transaction> getSuccessfulTransactionsByUserId(UUID userId) {
+    return transactionRepository.findByUserIdAndStatus(
+        userId, 
+        TransactionStatus.SUCCESS
+    );
+}
 
 }
