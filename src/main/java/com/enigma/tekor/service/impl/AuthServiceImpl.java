@@ -1,8 +1,10 @@
 package com.enigma.tekor.service.impl;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
+import com.enigma.tekor.entity.EmailVerificationToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -27,6 +29,7 @@ import com.enigma.tekor.entity.PasswordResetToken;
 import com.enigma.tekor.entity.Role;
 import com.enigma.tekor.entity.User;
 import com.enigma.tekor.exception.BadRequestException;
+import com.enigma.tekor.repository.EmailVerificationTokenRepository;
 import com.enigma.tekor.repository.PasswordResetTokenRepository;
 import com.enigma.tekor.security.CustomUserDetails;
 import com.enigma.tekor.service.AuthService;
@@ -47,7 +50,7 @@ public class AuthServiceImpl implements AuthService {
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
     private final EmailService emailService;
-
+    private final EmailVerificationTokenRepository emailVerificationTokenRepository;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
 
     @Value("${app.base-url}")
@@ -82,7 +85,11 @@ public class AuthServiceImpl implements AuthService {
 
         userService.save(newUser);
 
-        String verificationUrl = baseUrl + verificationPath + "?userId=" + newUser.getId();
+        String token = UUID.randomUUID().toString();
+        EmailVerificationToken verificationToken = new EmailVerificationToken(newUser, token);
+        emailVerificationTokenRepository.save(verificationToken);
+
+        String verificationUrl = baseUrl + verificationPath + "?token=" + token;
         String emailBody = "<h1>Verifikasi Email - Aplikasi Tekor</h1>"
                 + "<p>Halo <b>" + newUser.getUsername() + "</b>,</p>"
                 + "<p>Terima kasih telah mendaftar. Silakan klik tautan di bawah ini untuk memverifikasi alamat email Anda:</p>"
@@ -139,28 +146,33 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void verifyEmail(UUID userId) {
-        User user = userService.findById(userId);
+    public void verifyEmail(String token) {
+        EmailVerificationToken verificationToken = emailVerificationTokenRepository.findByToken(token)
+                .orElseThrow(() -> new BadRequestException("Link verifikasi tidak valid atau sudah digunakan."));
 
+        if (verificationToken.getExpiryDate().before(new Date())) {
+            emailVerificationTokenRepository.delete(verificationToken);
+            throw new BadRequestException("Link verifikasi sudah kedaluwarsa. Silakan daftar ulang untuk mendapatkan link baru.");
+        }
+
+        User user = verificationToken.getUser();
         if (Boolean.TRUE.equals(user.getIsVerified())) {
             throw new BadRequestException("Akun Anda sudah pernah diverifikasi sebelumnya.");
         }
 
         user.setIsVerified(true);
         userService.update(user);
+        emailVerificationTokenRepository.delete(verificationToken);
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void requestPasswordReset(ForgotPasswordRequest request) {
         User user = userService.getByEmail(request.getEmail());
-
         if(user==null)return;
 
         String token = UUID.randomUUID().toString();
-
         LocalDateTime expiryDate = LocalDateTime.now().plusMinutes(15);
-
         PasswordResetToken resetToken = passwordResetTokenRepository.findByUserId(user.getId())
                 .orElse(new PasswordResetToken());
 
@@ -182,7 +194,7 @@ public class AuthServiceImpl implements AuthService {
     @Transactional(readOnly = true)
     public void validatePasswordResetToken(String token) {
         PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
-            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Link reset password tidak valid atau sudah digunakan."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Link reset password tidak valid atau sudah digunakan."));
 
         if (resetToken.getExpiryDate().isBefore(LocalDateTime.now())) {
             passwordResetTokenRepository.delete(resetToken);
@@ -211,6 +223,4 @@ public class AuthServiceImpl implements AuthService {
 
         passwordResetTokenRepository.delete(token);
     }
-
-    
 }
