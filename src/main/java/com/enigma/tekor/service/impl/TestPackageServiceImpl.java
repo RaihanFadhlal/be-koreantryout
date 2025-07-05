@@ -1,14 +1,15 @@
 package com.enigma.tekor.service.impl;
 
-import com.enigma.tekor.dto.response.BundleResponse;
-import com.enigma.tekor.dto.response.ProductResponse;
-import com.enigma.tekor.service.BundleService;
 import com.enigma.tekor.constant.QuestionType;
 import com.enigma.tekor.dto.request.CreateQuestionRequest;
 import com.enigma.tekor.dto.request.CreateTestPackageRequest;
+import com.enigma.tekor.dto.response.BundleResponse;
+import com.enigma.tekor.dto.response.ProductResponse;
 import com.enigma.tekor.entity.Question;
 import com.enigma.tekor.entity.TestPackage;
+import com.enigma.tekor.repository.QuestionRepository;
 import com.enigma.tekor.repository.TestPackageRepository;
+import com.enigma.tekor.service.BundleService;
 import com.enigma.tekor.service.QuestionService;
 import com.enigma.tekor.service.TestPackageService;
 import jakarta.transaction.Transactional;
@@ -18,11 +19,9 @@ import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 
 import com.enigma.tekor.dto.request.UpdateTestPackageRequest;
 import com.enigma.tekor.dto.response.TestPackageResponse;
-import com.enigma.tekor.exception.UserNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -41,6 +40,7 @@ public class TestPackageServiceImpl implements TestPackageService {
     private final TestPackageRepository testPackageRepository;
     private final QuestionService questionService;
     private final BundleService bundleService;
+    private final QuestionRepository questionRepository;
 
     @Override
     @Transactional(rollbackOn = Exception.class)
@@ -167,5 +167,12 @@ public class TestPackageServiceImpl implements TestPackageService {
 
         return Stream.concat(productResponses.stream(), bundleProductResponses.stream())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Integer getTotalQuestionsByPackageId(String packageId) {
+        TestPackage testPackage = testPackageRepository.findById(UUID.fromString(packageId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Test package not found"));
+        return questionRepository.countByTestPackagesContains(testPackage);
     }
 }
