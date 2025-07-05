@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.enigma.tekor.entity.TestAttempt;
@@ -13,7 +14,6 @@ import com.enigma.tekor.entity.UserAnswer;
 import com.enigma.tekor.service.AIEvaluationService;
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
-import com.google.genai.types.GenerationConfig;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
@@ -24,21 +24,19 @@ import reactor.core.scheduler.Schedulers;
 public class AIEvaluationServiceImpl implements AIEvaluationService {
 
     private static final Logger log = LoggerFactory.getLogger(AIEvaluationServiceImpl.class);
-    private GenerationConfig generationConfig;
-    private static final Client client = new Client();
 
+    @Value("${google.api.key}")
+    private String googleApiKey;
+    
+    private Client client;
     private static final String MODEL_NAME = "gemini-2.0-flash-001";
     private static final String GENERIC_ERROR_MESSAGE = "Maaf, terjadi kesalahan saat mencoba mendapatkan evaluasi dari AI.";
 
     @PostConstruct
     public void init() {
         try {
-            this.generationConfig = GenerationConfig.builder()
-                    .temperature(0.7F)
-                    .topP(1.0F)
-                    .maxOutputTokens(2048)
-                    .build();
-
+            this.client = Client.builder().apiKey(googleApiKey).build();
+        
             log.info("Unified Gemini Client initialized successfully.");
             if (client.vertexAI()) {
                 log.info("Client is configured to use Vertex AI backend.");
