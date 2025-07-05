@@ -21,8 +21,6 @@ public interface UserService {
     User findByUsername(String username);
     User save(User user);
     User findById(UUID id);
-
     User update(User user);
-
     List<UserResponse> getAllUsers();
 }

@@ -62,3 +62,26 @@ Change Password.
     *   Creating a `TestAttempt` record for the user and the purchased `TestPackage`. This record signifies that the user is now eligible to take the test.
     *   If a `Bundle` was purchased, it creates `TestAttempt` records for *all* `TestPackage`s within that bundle.
 13. **User Can Access Content**: The user can now see the purchased test package(s) as available on their dashboard on the frontend and can start the exam. The frontend will periodically check the transaction status or get updated user permissions from the backend.
+
+# A.I. Evaluation
+
+## Automatic Evaluation after Exam Submission
+
+1.  **User Submits Exam**: The user finishes their exam and clicks the "Submit" button on the frontend.
+2.  **Frontend Sends Request**: The frontend sends a request to `POST /api/v1/test-attempts/{attemptId}/submit`.
+3.  **Backend Processes Submission**: The `TestAttemptServiceImpl` handles the request. It calculates the final score, sets the `status` to `COMPLETED`, and saves the `TestAttempt`.
+4.  **Asynchronous A.I. Call**: Immediately after saving, the service constructs an `AIEvaluationRequest` DTO containing the score and user answers.
+5.  **Service Invokes Gemini**: The service calls `AIEvaluationService.getEvaluation(request)`. This call is non-blocking (reactive).
+6.  **Gemini Processes and Responds**: The Gemini API processes the prompt and returns a detailed evaluation as a string.
+7.  **Backend Saves Evaluation**: The reactive pipeline receives the response. The `doOnNext` operator in `TestAttemptServiceImpl` takes the evaluation string and saves it to the `aiEvaluationResult` field of the corresponding `TestAttempt` entity.
+
+## Retrieving the A.I. Evaluation
+
+1.  **User Views Result**: After the exam, the user navigates to the result page for a specific `TestAttempt`.
+2.  **Frontend Requests Evaluation**: The frontend sends a `GET` request to `/api/v1/ai-evaluations/{testAttemptId}`.
+3.  **Backend Handles Request**: The `AIEvaluationController` receives the request and calls `TestAttemptService.getOrTriggerAIEvaluation(testAttemptId)`.
+4.  **Service Checks for Existing Evaluation**:
+    *   **If evaluation exists**: The service finds the `TestAttempt`, sees that `aiEvaluationResult` is not null, and immediately returns the existing evaluation string within a `Mono`.
+    *   **If evaluation does not exist (or is in progress)**: The service will trigger the evaluation process as described in the "Automatic Evaluation" flow. The client might need to poll this endpoint until the result is available.
+5.  **Backend Responds to Frontend**: The controller wraps the evaluation string in a standard `CommonResponse` and sends it back to the frontend.
+6.  **Frontend Displays Evaluation**: The frontend receives the response and displays the formatted A.I. evaluation to the user.
