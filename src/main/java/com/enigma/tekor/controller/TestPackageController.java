@@ -27,6 +27,7 @@ public class TestPackageController {
         testPackageService.createTestPackageFromExcel(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(CommonResponse.<String>builder()
+                        .status(HttpStatus.CREATED.getReasonPhrase())
                         .message("Successfully created test package")
                         .build());
     }
@@ -36,6 +37,7 @@ public class TestPackageController {
     public ResponseEntity<CommonResponse<TestPackageResponse>> updateTestPackage(@PathVariable String id, @RequestBody UpdateTestPackageRequest request) {
         TestPackageResponse updated = testPackageService.update(id, request);
         return ResponseEntity.ok(CommonResponse.<TestPackageResponse>builder()
+                .status(HttpStatus.OK.getReasonPhrase())
                 .message("Successfully updated test package")
                 .data(updated)
                 .build());
@@ -45,6 +47,7 @@ public class TestPackageController {
     public ResponseEntity<CommonResponse<TestPackageResponse>> getTestPackageById(@PathVariable String id) {
         TestPackageResponse testPackageResponse = testPackageService.getById(id);
         return ResponseEntity.ok(CommonResponse.<TestPackageResponse>builder()
+                .status(HttpStatus.OK.getReasonPhrase())
                 .message("Successfully get test package by id")
                 .data(testPackageResponse)
                 .build());
@@ -55,6 +58,7 @@ public class TestPackageController {
     public ResponseEntity<CommonResponse<String>> deleteTestPackage(@PathVariable String id) {
         testPackageService.delete(id);
         return ResponseEntity.ok(CommonResponse.<String>builder()
+                .status(HttpStatus.OK.getReasonPhrase())
                 .message("Successfully deleted test package")
                 .build());
     }
@@ -63,8 +67,19 @@ public class TestPackageController {
     public ResponseEntity<CommonResponse<List<ProductResponse>>> getAllPackagesAndBundles() {
         List<ProductResponse> productResponses = testPackageService.getAllPackagesAndBundles();
         return ResponseEntity.ok(CommonResponse.<List<ProductResponse>>builder()
+                .status(HttpStatus.OK.getReasonPhrase())
                 .message("Successfully get all packages and bundles")
                 .data(productResponses)
+                .build());
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<CommonResponse<List<TestPackageResponse>>> getAllTestPackages() {
+        List<TestPackageResponse> testPackageResponses = testPackageService.getAllTestPackages();
+        return ResponseEntity.ok(CommonResponse.<List<TestPackageResponse>>builder()
+                .status(HttpStatus.OK.getReasonPhrase())
+                .message("Successfully get all test packages")
+                .data(testPackageResponses)
                 .build());
     }
 }

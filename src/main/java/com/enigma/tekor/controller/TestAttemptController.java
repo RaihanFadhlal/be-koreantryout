@@ -66,7 +66,7 @@ public class TestAttemptController {
     public ResponseEntity<CommonResponse<TestAttemptResponse>> update(@RequestBody TestAttemptRequest request) {
         TestAttemptResponse response = testAttemptService.update(request);
         return ResponseEntity.ok(CommonResponse.<TestAttemptResponse>builder()
-                .status(HttpStatus.CREATED.getReasonPhrase())
+                .status(HttpStatus.OK.getReasonPhrase())
                 .message("Test attempt updated successfully")
                 .data(response)
                 .build());
@@ -79,7 +79,7 @@ public class TestAttemptController {
             @RequestBody SaveAnswerRequest request) {
         testAttemptService.saveUserAnswer(attemptId, request);
         return ResponseEntity.ok(CommonResponse.<String>builder()
-                .status(HttpStatus.CREATED.getReasonPhrase())
+                .status(HttpStatus.OK.getReasonPhrase())
                 .message("Progress saved successfully")
                 .data("OK")
                 .build());
