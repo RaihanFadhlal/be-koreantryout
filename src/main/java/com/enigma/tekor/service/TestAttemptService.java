@@ -18,5 +18,4 @@ public interface TestAttemptService {
     TestAttempt getTestAttemptById(String id);
     UserTestAttemptResponse getUserTestAttempt(String userId);
     List<TestAttemptResponse> getTestAttemptByUserId(String userId);
-
 }
