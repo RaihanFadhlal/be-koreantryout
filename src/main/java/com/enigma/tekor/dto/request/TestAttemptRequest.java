@@ -16,12 +16,10 @@ import lombok.Setter;
 @NoArgsConstructor
 @Builder
 public class TestAttemptRequest {
-
     private String id;
     private String transactionId; 
     private Date endTime;
     private Float score;
     private TestAttemptStatus status;
     private String aiEvaluationResult;
-    
 }

@@ -7,6 +7,7 @@ import com.enigma.tekor.dto.request.TestAttemptRequest;
 import com.enigma.tekor.dto.response.TestAttemptResponse;
 import com.enigma.tekor.dto.response.UserTestAttemptResponse;
 import com.enigma.tekor.entity.TestAttempt;
+import reactor.core.publisher.Mono;
 
 public interface TestAttemptService {
     TestAttemptResponse create(TestAttemptRequest request);
@@ -18,4 +19,5 @@ public interface TestAttemptService {
     TestAttempt getTestAttemptById(String id);
     UserTestAttemptResponse getUserTestAttempt(String userId);
     List<TestAttemptResponse> getTestAttemptByUserId(String userId);
+    Mono<String> getOrTriggerAIEvaluation(String testAttemptId);
 }
