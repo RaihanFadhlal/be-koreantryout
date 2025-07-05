@@ -11,11 +11,15 @@ import com.enigma.tekor.dto.response.UserTestAttemptResponse;
 import com.enigma.tekor.entity.TestAttempt;
 import com.enigma.tekor.entity.TestPackage;
 import com.enigma.tekor.entity.Transaction;
+import com.enigma.tekor.dto.request.AIEvaluationRequest;
+import com.enigma.tekor.dto.request.UserAnswerEvaluationRequest;
 import com.enigma.tekor.entity.User;
+import com.enigma.tekor.entity.UserAnswer;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.exception.ConflictException;
 import com.enigma.tekor.exception.NotFoundException;
 import com.enigma.tekor.repository.TestAttemptRepository;
+import com.enigma.tekor.service.AIEvaluationService;
 import com.enigma.tekor.service.TestAttemptService;
 import com.enigma.tekor.service.TransactionService;
 import com.enigma.tekor.service.QuestionService;
@@ -25,6 +29,8 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -41,6 +47,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
     private final UserService userService;
     private final UserAnswerService userAnswerService;
     private final QuestionService questionService;
+    private final AIEvaluationService aiEvaluationService;
 
     @Override
     @Transactional
@@ -155,6 +162,29 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         attempt.setStatus(TestAttemptStatus.COMPLETED);
         attempt.setScore(Float.valueOf(score));
         testAttemptRepository.save(attempt);
+
+        List<UserAnswerEvaluationRequest> userAnswerRequests = attempt.getUserAnswers().stream()
+        .map(this::mapUserAnswerToEvaluationRequest)
+        .collect(Collectors.toList());
+
+        AIEvaluationRequest aiRequest = AIEvaluationRequest.builder()
+                .testAttemptId(attempt.getId())
+                .score(attempt.getScore())
+                .userAnswers(userAnswerRequests)
+                .build();
+
+        aiEvaluationService.getEvaluation(aiRequest)
+                .subscribe(evaluation -> {
+                    attempt.setAiEvaluationResult(evaluation);
+                    testAttemptRepository.save(attempt);
+                });
+    }
+
+    private UserAnswerEvaluationRequest mapUserAnswerToEvaluationRequest(UserAnswer userAnswer) {
+        return UserAnswerEvaluationRequest.builder()
+                .questionType(userAnswer.getQuestion().getQuestionType().name())
+                .isCorrect(userAnswer.getIsCorrect())
+                .build();
     }
 
     private TestAttemptResponse mapToResponse(TestAttempt testAttempt) {
@@ -256,5 +286,30 @@ public class TestAttemptServiceImpl implements TestAttemptService {
     public TestAttempt getTestAttemptById(String id) {
         return testAttemptRepository.findById(UUID.fromString(id))
                 .orElseThrow(() -> new NotFoundException("Test attempt with ID: " + id + " not found"));
+    }
+
+    @Override
+    public Mono<String> getOrTriggerAIEvaluation(String testAttemptId) {
+        TestAttempt attempt = getTestAttemptById(testAttemptId);
+
+        if (attempt.getAiEvaluationResult() != null && !attempt.getAiEvaluationResult().isEmpty()) {
+            return Mono.just(attempt.getAiEvaluationResult());
+        }
+
+        List<UserAnswerEvaluationRequest> userAnswerRequests = attempt.getUserAnswers().stream()
+                .map(this::mapUserAnswerToEvaluationRequest)
+                .collect(Collectors.toList());
+
+        AIEvaluationRequest aiRequest = AIEvaluationRequest.builder()
+                .testAttemptId(attempt.getId())
+                .score(attempt.getScore())
+                .userAnswers(userAnswerRequests)
+                .build();
+
+        return aiEvaluationService.getEvaluation(aiRequest)
+                .doOnNext(evaluation -> {
+                    attempt.setAiEvaluationResult(evaluation);
+                    testAttemptRepository.save(attempt);
+                });
     }
 }
