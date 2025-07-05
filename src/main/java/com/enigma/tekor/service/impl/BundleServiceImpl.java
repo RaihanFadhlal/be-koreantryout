@@ -1,5 +1,6 @@
 package com.enigma.tekor.service.impl;
 
+import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.dto.request.BundleRequest;
 import com.enigma.tekor.dto.response.BundleResponse;
 import com.enigma.tekor.dto.response.PackageInBundleResponse;
@@ -38,6 +39,10 @@ public class BundleServiceImpl implements BundleService {
     @Transactional(rollbackFor = Exception.class)
     @Override
     public BundleResponse create(BundleRequest request) {
+        if (request.getPackageIds() == null || request.getPackageIds().size() < 2) {
+            throw new BadRequestException("Bundle must have at least two packages");
+        }
+
         Bundle bundle = new Bundle();
         bundle.setName(request.getName());
         bundle.setDescription(request.getDescription());

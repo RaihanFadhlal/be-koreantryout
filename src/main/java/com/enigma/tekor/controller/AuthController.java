@@ -45,7 +45,7 @@ public class AuthController {
         UserResponse userResponse = authService.register(request);
 
         CommonResponse<UserResponse> response = CommonResponse.<UserResponse>builder()
-                .status("success")
+                .status(HttpStatus.CREATED.getReasonPhrase())
                 .message("Registration successful. Please check your email for verification.")
                 .data(userResponse)
                 .build();
@@ -58,7 +58,7 @@ public class AuthController {
         LoginResponse loginResponse = authService.login(request);
 
         CommonResponse<LoginResponse> response = CommonResponse.<LoginResponse>builder()
-                .status("success")
+                .status(HttpStatus.OK.getReasonPhrase())
                 .message("Login successful.")
                 .data(loginResponse)
                 .build();

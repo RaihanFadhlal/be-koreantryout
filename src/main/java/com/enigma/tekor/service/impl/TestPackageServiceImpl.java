@@ -170,6 +170,19 @@ public class TestPackageServiceImpl implements TestPackageService {
     }
 
     @Override
+    public List<TestPackageResponse> getAllTestPackages() {
+        List<TestPackage> testPackages = testPackageRepository.findAll();
+        return testPackages.stream().map(testPackage -> TestPackageResponse.builder()
+                .id(String.valueOf(testPackage.getId()))
+                .name(testPackage.getName())
+                .description(testPackage.getDescription())
+                .imageUrl(testPackage.getImageUrl())
+                .price(testPackage.getPrice().doubleValue())
+                .discountPrice(testPackage.getDiscountPrice().doubleValue())
+                .build()).collect(Collectors.toList());
+    }
+
+    @Override
     public Integer getTotalQuestionsByPackageId(String packageId) {
         TestPackage testPackage = testPackageRepository.findById(UUID.fromString(packageId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Test package not found"));
