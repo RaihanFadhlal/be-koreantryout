@@ -48,7 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/vocabularies/**").permitAll()
                         .requestMatchers("/api/v1/test-attempts/**").permitAll()
                         .requestMatchers("/api/v1/bundles/**").permitAll()
-                        .requestMatchers("/api/v1/ai-evaluations/**").permitAll()
+                        .requestMatchers("/api/v1/ai-evaluations/**").hasRole("USER")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
