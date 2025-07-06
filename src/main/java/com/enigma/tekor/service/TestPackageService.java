@@ -16,5 +16,6 @@ public interface TestPackageService {
     TestPackage getOneById(UUID id);
     void delete(String id);
     List<ProductResponse> getAllPackagesAndBundles();
+    List<TestPackageResponse> getAllTestPackages();
     Integer getTotalQuestionsByPackageId(String packageId);
 }
