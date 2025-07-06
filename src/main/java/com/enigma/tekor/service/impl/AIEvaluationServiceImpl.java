@@ -92,7 +92,7 @@ public class AIEvaluationServiceImpl implements AIEvaluationService {
 
                 KONTEKS UJIAN:
                 - Seorang peserta ujian baru saja menyelesaikan simulasi ujian EPS-TOPIK
-                - Hasil ujian: Skor Total %d dari 100 poin
+                - Hasil ujian: Skor Total %.0f dari 100 poin
                 - Detail per kategori: %s
 
                 TUGAS ANDA:
