@@ -15,6 +15,7 @@ import com.enigma.tekor.dto.request.AIEvaluationRequest;
 import com.enigma.tekor.dto.request.UserAnswerEvaluationRequest;
 import com.enigma.tekor.entity.User;
 import com.enigma.tekor.entity.UserAnswer;
+import com.enigma.tekor.exception.AccessForbiddenException;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.exception.ConflictException;
 import com.enigma.tekor.exception.NotFoundException;
@@ -291,6 +292,13 @@ public class TestAttemptServiceImpl implements TestAttemptService {
     @Override
     public Mono<String> getOrTriggerAIEvaluation(String testAttemptId) {
         TestAttempt attempt = getTestAttemptById(testAttemptId);
+
+        String currentUsername = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userService.getByEmail(currentUsername);
+
+        if (!attempt.getUser().getId().equals(currentUser.getId())) {
+            throw new AccessForbiddenException("You are not authorized to access this evaluation");
+        }
 
         if (attempt.getAiEvaluationResult() != null && !attempt.getAiEvaluationResult().isEmpty()) {
             return Mono.just(attempt.getAiEvaluationResult());

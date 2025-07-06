@@ -16,7 +16,6 @@ import jakarta.annotation.PostConstruct;
 @Configuration
 public class MidtransConfig {
 
-    // Highlight: Menambahkan logger
     private static final Logger log = LoggerFactory.getLogger(MidtransConfig.class);
 
     @Value("${midtrans.server.key}")
@@ -28,14 +27,11 @@ public class MidtransConfig {
     @Value("${midtrans.is.production}")
     private boolean isProduction;
 
-    // Highlight: (PERUBAHAN) Menambahkan metode @PostConstruct untuk logging
     @PostConstruct
     public void logMidtransConfig() {
         log.info("==================== MIDTRANS CONFIGURATION ====================");
         log.info("Midtrans Environment: {}", isProduction ? "PRODUCTION" : "SANDBOX");
         log.info("Midtrans Client Key (Loaded): {}", clientKey);
-        // Kita tidak log server key lengkap untuk keamanan, cukup konfirmasi bahwa
-        // isProduction sudah benar.
         log.info("==============================================================");
     }
 
