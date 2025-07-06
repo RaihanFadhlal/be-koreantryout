@@ -47,10 +47,6 @@ public class TestAttempt {
     @JoinColumn(name = "package_id", nullable = false)
     private TestPackage testPackage;
 
-    @OneToOne
-    @JoinColumn(name = "transaction_id", nullable = false, unique = true)
-    private Transaction transaction;
-
     @Column(name = "start_time")
     private Date startTime;
 
