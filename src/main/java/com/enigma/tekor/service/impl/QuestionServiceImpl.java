@@ -62,6 +62,7 @@ public class QuestionServiceImpl implements QuestionService {
         question.setQuestionType(request.getQuestionType());
         question.setImageUrl(request.getImageUrl());
         question.setAudioUrl(request.getAudioUrl());
+        question.setNumber(request.getNumber());
 
         List<Option> options = new ArrayList<>();
         for (String optionText : request.getOptions()) {

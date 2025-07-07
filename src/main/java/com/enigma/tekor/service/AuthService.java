@@ -14,4 +14,5 @@ public interface AuthService {
     void requestPasswordReset(ForgotPasswordRequest forgotPasswordRequest);
     void resetPassword(ResetPasswordRequest resetPasswordRequest);
     void validatePasswordResetToken(String token);
+    void verifyEmailFromMobile(String token);
 }

@@ -83,7 +83,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private void createDummyTestPackage() {
         try {
-            ClassPathResource resource = new ClassPathResource("Dummy Package.xlsx");
+            ClassPathResource resource = new ClassPathResource("Question-Tekor.xlsx");
             MultipartFile multipartFile = new MockMultipartFile(
                     "file",
                     resource.getFilename(),
@@ -92,11 +92,11 @@ public class DataInitializer implements CommandLineRunner {
             );
 
             CreateTestPackageRequest request = CreateTestPackageRequest.builder()
-                    .name("Dummy Test Package")
-                    .description("This is a dummy test package created from an Excel file.")
+                    .name("Paket Test A")
+                    .description("Paket try out berisi 20 soal Reading dan 20 soal Listening")
                     .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751525227/A_c3jx1r.jpg")
                     .price(new BigDecimal("100000"))
-                    .discountPrice(new BigDecimal("80000"))
+                    .discountPrice(new BigDecimal("29900"))
                     .file(multipartFile)
                     .build();
 

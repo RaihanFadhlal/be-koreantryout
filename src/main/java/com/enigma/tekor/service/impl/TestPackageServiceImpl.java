@@ -14,6 +14,7 @@ import com.enigma.tekor.service.QuestionService;
 import com.enigma.tekor.service.TestPackageService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -49,19 +50,23 @@ public class TestPackageServiceImpl implements TestPackageService {
 
         try (Workbook workbook = new XSSFWorkbook(request.getFile().getInputStream())) {
             Sheet sheet = workbook.getSheetAt(0);
-
+            Integer number = 1;
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
 
-                String questionText = row.getCell(0).getStringCellValue();
-                QuestionType questionType = QuestionType.valueOf(row.getCell(1).getStringCellValue().trim().toUpperCase());
-                String imageUrl = row.getCell(2) != null ? row.getCell(2).getStringCellValue() : null;
-                String audioUrl = row.getCell(3) != null ? row.getCell(3).getStringCellValue() : null;
-                String option1 = row.getCell(4).getStringCellValue();
-                String option2 = row.getCell(5).getStringCellValue();
-                String option3 = row.getCell(6).getStringCellValue();
-                String option4 = row.getCell(7).getStringCellValue();
-                String correctOption = row.getCell(8).getStringCellValue();
+                String questionText = getCellValue(row.getCell(0));
+                if (questionText == null || questionText.trim().isEmpty()) {
+                    continue; // Skip this row if questionText is null or empty
+                }
+                QuestionType questionType = QuestionType.valueOf(getCellValue(row.getCell(1)).trim().toUpperCase());
+                String imageUrl = getCellValue(row.getCell(2));
+                String audioUrl = getCellValue(row.getCell(3));
+                String option1 = getCellValue(row.getCell(4));
+                String option2 = getCellValue(row.getCell(5));
+                String option3 = getCellValue(row.getCell(6));
+                String option4 = getCellValue(row.getCell(7));
+                String correctOption = getCellValue(row.getCell(8));
+                String desc = getCellValue(row.getCell(9));
 
                 List<String> options = new ArrayList<>();
                 options.add(option1);
@@ -71,15 +76,18 @@ public class TestPackageServiceImpl implements TestPackageService {
 
                 CreateQuestionRequest questionRequest = new CreateQuestionRequest(
                         questionText,
+                        desc,
                         questionType,
                         imageUrl,
                         audioUrl,
+                        number,
                         options,
                         correctOption
                 );
 
                 Question savedQuestion = questionService.createQuestionWithOptions(questionRequest);
                 questionsForPackage.add(savedQuestion);
+                number++;
             }
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse Excel file: " + e.getMessage());
@@ -187,5 +195,18 @@ public class TestPackageServiceImpl implements TestPackageService {
         TestPackage testPackage = testPackageRepository.findById(UUID.fromString(packageId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Test package not found"));
         return questionRepository.countByTestPackagesContains(testPackage);
+    }
+
+    private String getCellValue(Cell cell) {
+        if (cell == null) {
+            return null;
+        }
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue();
+            case NUMERIC -> String.valueOf((int) cell.getNumericCellValue());
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            case FORMULA -> cell.getCellFormula();
+            default -> null;
+        };
     }
 }

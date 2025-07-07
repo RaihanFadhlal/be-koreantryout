@@ -35,8 +35,14 @@ public class Question {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(name = "number", nullable = false)
+    private Integer number;
+
     @Column(name = "question_text", nullable = false, columnDefinition = "TEXT")
     private String questionText;
+
+    @Column(name = "question_desc", columnDefinition = "TEXT")
+    private String questionDesc;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "question_type", nullable = false)
