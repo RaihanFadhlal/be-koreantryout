@@ -46,7 +46,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/users/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/v1/transactions/**").permitAll()
                         .requestMatchers("/api/v1/vocabularies/**").permitAll()
-                        .requestMatchers("/api/v1/test-attempts/**").permitAll()
+                        .requestMatchers("/api/v1/test-attempts/**").hasRole("USER")
                         .requestMatchers("/api/v1/bundles/**").permitAll()
                         .requestMatchers("/api/v1/ai-evaluations/**").hasRole("USER")
                         .anyRequest().authenticated()
@@ -81,4 +81,3 @@ public class SecurityConfig {
         return source;
     }
 }
- 
