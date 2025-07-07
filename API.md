@@ -1161,5 +1161,185 @@ Kosong (empty body)
 
 ---
 
-## 8. Test Attempts Endpoints
+## 8. Test Attempt Endpoints
+
+### 8.1 Start Test Attempt
+
+**Endpoint**: `POST /api/v1/test-attempts/start/{packageId}`
+
+**Authorization**: Bearer Token (USER role required)
+
+**Description**: Memulai attempt baru untuk mengerjakan paket tes
+
+#### Path Parameters
+
+| Parameter | Type   | Description  | Required |
+| --------- | ------ | ------------ | -------- |
+| packageId | String | ID paket tes | ✓        |
+
+#### Success Response `201 Created`
+
+```json
+{
+  "status": "CREATED",
+  "message": "Test attempt created successfully",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "userId": "110e8400-e29b-41d4-a716-446655440000",
+    "packageId": "330e8400-e29b-41d4-a716-446655440000",
+    "startTime": "2023-07-20T15:30:45",
+    "status": "IN_PROGRESS"
+  }
+}
+```
+
+#### Error Responses
+
+- `403 Forbidden`: User belum membeli paket tes
+- `404 Not Found`: Paket tes tidak ditemukan
+- `409 Conflict`: Sudah melebihi attempt yang diperbolehkan
+
+---
+
+### 8.2 Save Answer
+
+**Endpoint**: `POST /api/v1/test-attempts/{attemptId}/answer`
+
+**Authorization**: Bearer Token (USER role required)
+
+**Description**: Menyimpan jawaban user selama pengerjaan tes
+
+#### Path Parameters
+
+| Parameter | Type   | Description | Required |
+| --------- | ------ | ----------- | -------- |
+| attemptId | String | ID attempt  | ✓        |
+
+#### Request Body
+
+```json
+{
+  "questionId": "440e8400-e29b-41d4-a716-446655440000",
+  "optionId": "550e8400-e29b-41d4-a716-446655440000",
+  "remainingTimeInSeconds": 1200
+}
+```
+
+#### Success Response `200 OK`
+
+```json
+{
+  "status": "OK",
+  "message": "Progress saved successfully",
+  "data": "OK"
+}
+```
+
+#### Error Responses
+
+- `400 Bad Request`: Attempt sudah selesai
+- `403 Forbidden`: Bukan attempt milik user
+- `404 Not Found`: Attempt tidak ditemukan
+
+---
+
+### 8.3 Submit Test Attempt
+
+**Endpoint**: `POST /api/v1/test-attempts/{attemptId}/submit`
+
+**Authorization**: Bearer Token (USER role required)
+
+**Description**: Menyelesaikan attempt dan memicu evaluasi AI
+
+#### Path Parameters
+
+| Parameter | Type   | Description | Required |
+| --------- | ------ | ----------- | -------- |
+| attemptId | String | ID attempt  | ✓        |
+
+#### Success Response `200 OK`
+
+```json
+{
+  "status": "OK",
+  "message": "Test attempt submitted successfully",
+  "data": "OK"
+}
+```
+
+#### Error Responses
+
+- `400 Bad Request`: Attempt sudah selesai
+- `403 Forbidden`: Bukan attempt milik user
+- `404 Not Found`: Attempt tidak ditemukan
+
+---
+
+### 8.4 Get User Test Attempts
+
+**Endpoint**: `GET /api/v1/test-attempts/my-tests`
+
+**Authorization**: Bearer Token (USER role required)
+
+**Description**: Mendapatkan daftar tes user (baik yang ready, in-progress, atau completed)
+
+#### Success Response `200 OK`
+
+```json
+{
+  "status": "OK",
+  "message": "Successfully retrieved user tests",
+  "data": {
+    "readyToStart": [
+      {
+        "transactionId": "660e8400-e29b-41d4-a716-446655440000",
+        "testPackage": {
+          "id": "330e8400-e29b-41d4-a716-446655440000",
+          "name": "Paket A"
+        },
+        "purchaseDate": "2023-07-20T10:15:30"
+      }
+    ],
+    "inProgress": [
+      {
+        "attemptId": "550e8400-e29b-41d4-a716-446655440000",
+        "testPackage": {
+          "id": "330e8400-e29b-41d4-a716-446655440000",
+          "name": "Paket A"
+        },
+        "startTime": "2023-07-20T15:30:45",
+        "remainingDuration": 1200
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 8.5 Get Completed Tests
+
+**Endpoint**: `GET /api/v1/test-attempts/my-tests/completed`
+
+**Authorization**: Bearer Token (USER role required)
+
+**Description**: Mendapatkan riwayat attempt yang sudah selesai
+
+#### Success Response `200 OK`
+
+```json
+{
+  "status": "OK",
+  "message": "Successfully retrieved completed user tests",
+  "data": [
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440000",
+      "packageId": "330e8400-e29b-41d4-a716-446655440000",
+      "score": 75.0,
+      "status": "COMPLETED",
+      "endTime": "2023-07-19T16:45:00"
+    }
+  ]
+}
+```
 ````
