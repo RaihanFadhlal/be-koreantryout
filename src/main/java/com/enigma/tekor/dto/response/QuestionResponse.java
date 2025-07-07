@@ -1,22 +1,23 @@
-package com.enigma.tekor.dto.request;
+package com.enigma.tekor.dto.response;
 
 import com.enigma.tekor.constant.QuestionType;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
+import java.util.UUID;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class CreateQuestionRequest {
+@Builder
+public class QuestionResponse {
+    private UUID id;
     private String questionText;
-    private String questionDesc;
-    private QuestionType questionType;
     private String imageUrl;
     private String audioUrl;
-    private Integer number;
-    private List<String> options;
-    private String correctOption;
+    private QuestionType questionType;
+    private List<OptionResponse> options;
 }

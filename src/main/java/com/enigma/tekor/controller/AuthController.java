@@ -1,6 +1,7 @@
 package com.enigma.tekor.controller;
 
 import java.net.URI;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -107,5 +108,16 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    
+    @PostMapping("/verify-mobile")
+    public ResponseEntity<CommonResponse<?>> verifyEmailFromMobile(@RequestBody Map<String, String> request) {
+        String token = request.get("token");
+        authService.verifyEmailFromMobile(token);
+
+        CommonResponse<?> response = CommonResponse.builder()
+                .status(HttpStatus.OK.getReasonPhrase())
+                .message("Email verified successfully from mobile.")
+                .build();
+
+        return ResponseEntity.ok(response);
+    }
 }

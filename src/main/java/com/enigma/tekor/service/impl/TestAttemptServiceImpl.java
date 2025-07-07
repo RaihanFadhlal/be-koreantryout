@@ -5,11 +5,7 @@ import com.enigma.tekor.constant.TransactionStatus;
 import com.enigma.tekor.dto.request.AIEvaluationRequest;
 import com.enigma.tekor.dto.request.SaveAnswerRequest;
 import com.enigma.tekor.dto.request.UserAnswerEvaluationRequest;
-import com.enigma.tekor.dto.response.InProgressAttempt;
-import com.enigma.tekor.dto.response.ReadyTestPackage;
-import com.enigma.tekor.dto.response.TestAttemptResponse;
-import com.enigma.tekor.dto.response.TestPackageResponse;
-import com.enigma.tekor.dto.response.UserTestAttemptResponse;
+import com.enigma.tekor.dto.response.*;
 import com.enigma.tekor.entity.*;
 import com.enigma.tekor.exception.AccessForbiddenException;
 import com.enigma.tekor.exception.BadRequestException;
@@ -316,5 +312,54 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                     attempt.setAiEvaluationResult(evaluation);
                     testAttemptRepository.save(attempt);
                 });
+    }
+
+    @Override
+    public TestAttemptDetailResponse getTestAttemptDetails(String attemptId) {
+        TestAttempt attempt = getTestAttemptEntityById(attemptId);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        if (!attempt.getUser().getId().equals(userDetails.getUser().getId())) {
+            throw new AccessForbiddenException("You are not authorized to access this attempt details");
+        }
+
+        if (!attempt.getStatus().equals(TestAttemptStatus.IN_PROGRESS)) {
+            throw new BadRequestException("Test attempt is not in progress. Details can only be viewed for in-progress tests.");
+        }
+
+        List<QuestionResponse> questionResponses = attempt.getTestPackage().getQuestions().stream()
+                .map(question -> QuestionResponse.builder()
+                        .id(question.getId())
+                        .questionText(question.getQuestionText())
+                        .imageUrl(question.getImageUrl())
+                        .audioUrl(question.getAudioUrl())
+                        .questionType(question.getQuestionType())
+                        .options(question.getOptions().stream()
+                                .map(option -> OptionResponse.builder()
+                                        .id(option.getId())
+                                        .optionText(option.getOptionText())
+                                        .build())
+                                .collect(Collectors.toList()))
+                        .build())
+                .collect(Collectors.toList());
+
+        List<UserAnswerResponse> userAnswerResponses = attempt.getUserAnswers().stream()
+                .map(userAnswer -> UserAnswerResponse.builder()
+                        .id(userAnswer.getId())
+                        .questionId(userAnswer.getQuestion().getId())
+                        .selectedOptionId(userAnswer.getSelectedOption()!= null ? userAnswer.getSelectedOption().getId() : null)
+                        .build())
+                .collect(Collectors.toList());
+
+        return TestAttemptDetailResponse.builder()
+                .id(attempt.getId())
+                .testPackageName(attempt.getTestPackage().getName())
+                .startTime(attempt.getStartTime())
+                .remainingDuration(attempt.getRemainingDuration())
+                .questions(questionResponses)
+                .userAnswers(userAnswerResponses)
+                .build();
     }
 }
