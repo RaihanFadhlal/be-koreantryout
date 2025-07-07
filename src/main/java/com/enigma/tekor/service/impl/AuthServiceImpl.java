@@ -223,4 +223,10 @@ public class AuthServiceImpl implements AuthService {
 
         passwordResetTokenRepository.delete(token);
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void verifyEmailFromMobile(String token) {
+        verifyEmail(token);
+    }
 }
