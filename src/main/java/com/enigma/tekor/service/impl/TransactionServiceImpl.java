@@ -70,8 +70,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         if (request.getBundleId() != null) {
             Bundle bundle = bundleService.getBundleById(request.getBundleId());
-            transaction.setBundle(bundle); 
-            if (bundle.getDiscountPrice() == null){
+            transaction.setBundle(bundle);
+            if (bundle.getDiscountPrice() == null) {
                 transaction.setAmount(bundle.getPrice());
             } else {
                 transaction.setAmount(bundle.getDiscountPrice());
@@ -79,7 +79,7 @@ public class TransactionServiceImpl implements TransactionService {
         } else {
             TestPackage testPackage = testPackageService.getOneById(request.getTestPackageId());
             transaction.setTestPackage(testPackage);
-            if (testPackage.getDiscountPrice() == null){
+            if (testPackage.getDiscountPrice() == null) {
                 transaction.setAmount(testPackage.getPrice());
             } else {
                 transaction.setAmount(testPackage.getDiscountPrice());
@@ -104,6 +104,7 @@ public class TransactionServiceImpl implements TransactionService {
     public void handleMidtransNotification(Map<String, Object> payload) {
         String orderId = (String) payload.get("order_id");
         log.info("Received Midtrans notification for order_id: {}", orderId);
+        log.info("Payload", payload);
 
         Transaction transaction = transactionRepository.findByMidtransOrderId(orderId)
                 .orElseThrow(() -> {
@@ -115,20 +116,19 @@ public class TransactionServiceImpl implements TransactionService {
         String transactionStatus = (String) payload.get("transaction_status");
         String fraudStatus = (String) payload.get("fraud_status");
 
-        if (transactionStatus.equals("capture")) {
-            if (fraudStatus.equals("accept")) {
+        if ("capture".equals(transactionStatus)) {
+            if ("accept".equals(fraudStatus)) {
                 transaction.setStatus(TransactionStatus.SUCCESS);
-            } else if (fraudStatus.equals("challenge")) {
+            } else if ("challenge".equals(fraudStatus)) {
                 transaction.setStatus(TransactionStatus.PENDING);
             } else {
                 transaction.setStatus(TransactionStatus.FAILED);
             }
-        } else if (transactionStatus.equals("settlement")) {
+        } else if ("settlement".equals(transactionStatus)) {
             transaction.setStatus(TransactionStatus.SUCCESS);
-        } else if (transactionStatus.equals("cancel") || transactionStatus.equals("deny")
-                || transactionStatus.equals("expire")) {
+        } else if ("cancel".equals(transactionStatus) || "deny".equals(transactionStatus) || "expire".equals(transactionStatus)) {
             transaction.setStatus(TransactionStatus.FAILED);
-        } else if (transactionStatus.equals("pending")) {
+        } else if ("pending".equals(transactionStatus)) {
             transaction.setStatus(TransactionStatus.PENDING);
         }
 
@@ -179,12 +179,12 @@ public class TransactionServiceImpl implements TransactionService {
 
     private TransactionResponse toTransactionResponse(Transaction transaction, String redirectUrl) {
         String packageName = Optional.ofNullable(transaction.getTestPackage())
-                                    .map(TestPackage::getName)
-                                    .orElse(null);
+                .map(TestPackage::getName)
+                .orElse(null);
 
         String bundleName = Optional.ofNullable(transaction.getBundle())
-                                    .map(Bundle::getName)
-                                    .orElse(null);
+                .map(Bundle::getName)
+                .orElse(null);
 
         return TransactionResponse.builder()
                 .orderId(transaction.getMidtransOrderId())
@@ -197,57 +197,54 @@ public class TransactionServiceImpl implements TransactionService {
                 .build();
     }
 
-
     @Override
     @Transactional(readOnly = true)
     public List<TransactionDetailResponse> getTransactionsByUserId(String userId) {
-    
-     String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-     User currentUser = userService.getByEmail(currentUserEmail);
-    
-     if (!currentUser.getId().toString().equals(userId) && 
-         !currentUser.getRole().getName().equals("ROLE_ADMIN")) {
-         throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-             "You don't have access to this transaction");
-     }
-     
-     
-     return transactionRepository.findByUserId(UUID.fromString(userId)).stream()
-             .map(this::mapToTransactionDetailResponse)
-             .collect(Collectors.toList());
- }
- 
- private TransactionDetailResponse mapToTransactionDetailResponse(Transaction transaction) {
-     return TransactionDetailResponse.builder()
-             .id(transaction.getId().toString())
-             .midtransOrderId(transaction.getMidtransOrderId())
-             .amount(transaction.getAmount())
-             .status(transaction.getStatus().name())
-             .createdAt(transaction.getCreatedAt())
-             .testPackage(transaction.getTestPackage() != null ? TestPackageResponse.builder()
-                     .id(transaction.getTestPackage().getId().toString())
-                     .name(transaction.getTestPackage().getName())
-                     .description(transaction.getTestPackage().getDescription())
-                     .price(transaction.getTestPackage().getPrice() != null
-                             ? transaction.getTestPackage().getPrice().doubleValue()
-                             : null)
-                     .discountPrice(transaction.getTestPackage().getDiscountPrice() != null
-                             ? transaction.getTestPackage().getDiscountPrice().doubleValue()
-                             : null)
-                     .build() : null)
-             .bundle(transaction.getBundle() != null ? BundleResponse.builder()
-                     .id(transaction.getBundle().getId())
-                     .name(transaction.getBundle().getName())
-                     .build() : null)
-             .build();
- }
- 
- @Override
-public List<Transaction> getSuccessfulTransactionsByUserId(UUID userId) {
-    return transactionRepository.findByUserIdAndStatus(
-        userId, 
-        TransactionStatus.SUCCESS
-    );
-}
+
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userService.getByEmail(currentUserEmail);
+
+        if (!currentUser.getId().toString().equals(userId) &&
+                !currentUser.getRole().getName().equals("ROLE_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You don't have access to this transaction");
+        }
+
+        return transactionRepository.findByUserId(UUID.fromString(userId)).stream()
+                .map(this::mapToTransactionDetailResponse)
+                .collect(Collectors.toList());
+    }
+
+    private TransactionDetailResponse mapToTransactionDetailResponse(Transaction transaction) {
+        return TransactionDetailResponse.builder()
+                .id(transaction.getId().toString())
+                .midtransOrderId(transaction.getMidtransOrderId())
+                .amount(transaction.getAmount())
+                .status(transaction.getStatus().name())
+                .createdAt(transaction.getCreatedAt())
+                .testPackage(transaction.getTestPackage() != null ? TestPackageResponse.builder()
+                        .id(transaction.getTestPackage().getId().toString())
+                        .name(transaction.getTestPackage().getName())
+                        .description(transaction.getTestPackage().getDescription())
+                        .price(transaction.getTestPackage().getPrice() != null
+                                ? transaction.getTestPackage().getPrice().doubleValue()
+                                : null)
+                        .discountPrice(transaction.getTestPackage().getDiscountPrice() != null
+                                ? transaction.getTestPackage().getDiscountPrice().doubleValue()
+                                : null)
+                        .build() : null)
+                .bundle(transaction.getBundle() != null ? BundleResponse.builder()
+                        .id(transaction.getBundle().getId())
+                        .name(transaction.getBundle().getName())
+                        .build() : null)
+                .build();
+    }
+
+    @Override
+    public List<Transaction> getSuccessfulTransactionsByUserId(UUID userId) {
+        return transactionRepository.findByUserIdAndStatus(
+                userId,
+                TransactionStatus.SUCCESS);
+    }
 
 }
