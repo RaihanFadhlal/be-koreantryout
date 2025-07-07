@@ -15,14 +15,17 @@ import org.springframework.web.multipart.MultipartFile;
 import com.enigma.tekor.constant.TransactionStatus;
 import com.enigma.tekor.dto.request.CreateTestPackageRequest;
 import com.enigma.tekor.dto.request.VocabularyRequest;
+import com.enigma.tekor.dto.request.BundleRequest;
 import com.enigma.tekor.entity.Role;
 import com.enigma.tekor.entity.TestPackage;
 import com.enigma.tekor.entity.Transaction;
 import com.enigma.tekor.entity.User;
+import com.enigma.tekor.repository.BundleRepository;
 import com.enigma.tekor.repository.TestPackageRepository;
 import com.enigma.tekor.repository.TransactionRepository;
 import com.enigma.tekor.repository.UserRepository;
 import com.enigma.tekor.repository.VocabularyRepository;
+import com.enigma.tekor.service.BundleService;
 import com.enigma.tekor.service.RoleService;
 import com.enigma.tekor.service.TestPackageService;
 import com.enigma.tekor.service.VocabularyService;
@@ -40,6 +43,8 @@ public class DataInitializer implements CommandLineRunner {
     private final TransactionRepository transactionRepository;
     private final VocabularyRepository vocabularyRepository;
     private final VocabularyService vocabularyService;
+    private final BundleService bundleService;
+    private final BundleRepository bundleRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -69,7 +74,10 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         if (testPackageRepository.count() == 0) {
-            createDummyTestPackage();
+            List<TestPackage> packages = createDummyTestPackage();
+            if (bundleRepository.count() == 0 && packages.size() >= 2) {
+                createDummyBundle(packages);
+            }
         }
 
         if (transactionRepository.count() == 0) {
@@ -81,7 +89,7 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    private void createDummyTestPackage() {
+    private List<TestPackage> createDummyTestPackage() {
         try {
             ClassPathResource resource = new ClassPathResource("Question-Tekor.xlsx");
             MultipartFile multipartFile = new MockMultipartFile(
@@ -93,17 +101,39 @@ public class DataInitializer implements CommandLineRunner {
 
             CreateTestPackageRequest request = CreateTestPackageRequest.builder()
                     .name("Paket Test A")
-                    .description("Paket try out berisi 20 soal Reading dan 20 soal Listening")
+                    .description("Paket A try out tes bahasa korea berisi 20 soal Reading dan 20 soal Listening")
                     .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751525227/A_c3jx1r.jpg")
                     .price(new BigDecimal("100000"))
                     .discountPrice(new BigDecimal("29900"))
                     .file(multipartFile)
                     .build();
 
-            testPackageService.createTestPackageFromExcel(request);
+            CreateTestPackageRequest requestB = CreateTestPackageRequest.builder()
+                    .name("Paket Test B")
+                    .description("Paket B try out tes bahasa korea berisi 20 soal Reading dan 20 soal Listening")
+                    .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751525227/B_z8vwmp.jpg")
+                    .price(new BigDecimal("100000"))
+                    .discountPrice(new BigDecimal("29900"))
+                    .file(multipartFile)
+                    .build();
+
+            TestPackage packageA = testPackageService.createTestPackageFromExcel(request);
+            TestPackage packageB = testPackageService.createTestPackageFromExcel(requestB);
+            return List.of(packageA, packageB);
         } catch (IOException e) {
             throw new RuntimeException("Failed to load dummy package", e);
         }
+    }
+
+    private void createDummyBundle(List<TestPackage> packages) {
+        BundleRequest bundleRequest = BundleRequest.builder()
+                .name("Paket Hemat A & B")
+                .description("Dapatkan akses ke Paket A dan Paket B dengan harga lebih murah!")
+                .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751525227/Bundle_AB_yq4q8h.jpg")
+                .price(new BigDecimal("150000"))
+                .packageIds(List.of(packages.get(0).getId(), packages.get(1).getId()))
+                .build();
+        bundleService.create(bundleRequest);
     }
 
     private void createDummyTransaction(User user) {
@@ -122,7 +152,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private void createDummyVocabulary() {
         try {
-            ClassPathResource resource = new ClassPathResource("DummyVocabularies.xlsx");
+            ClassPathResource resource = new ClassPathResource("Vocabularies.xlsx");
             MockMultipartFile multipartFile = new MockMultipartFile(
                     "file",
                     resource.getFilename(),

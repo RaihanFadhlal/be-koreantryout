@@ -46,7 +46,7 @@ public class TestPackageServiceImpl implements TestPackageService {
 
     @Override
     @Transactional(rollbackOn = Exception.class)
-    public void createTestPackageFromExcel(CreateTestPackageRequest request) {
+    public TestPackage createTestPackageFromExcel(CreateTestPackageRequest request) {
         List<Question> questionsForPackage = new ArrayList<>();
 
         try (Workbook workbook = new XSSFWorkbook(request.getFile().getInputStream())) {
@@ -103,7 +103,7 @@ public class TestPackageServiceImpl implements TestPackageService {
         testPackage.setIsTrial(request.getPrice().compareTo(BigDecimal.ZERO) <= 0);
         testPackage.setQuestions(questionsForPackage);
 
-        testPackageRepository.save(testPackage);
+        return testPackageRepository.save(testPackage);
     }
 
     @Override

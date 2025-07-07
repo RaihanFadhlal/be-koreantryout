@@ -16,6 +16,7 @@ import lombok.NoArgsConstructor;
 public class BundleRequest {
     private String name;
     private String description;
+    private String imageUrl;
     private BigDecimal price;
     private List<UUID> packageIds;
 }
