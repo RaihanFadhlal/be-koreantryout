@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -34,7 +33,6 @@ import com.enigma.tekor.service.MidtransService;
 import com.enigma.tekor.service.TestPackageService;
 import com.enigma.tekor.service.TransactionService;
 import com.enigma.tekor.service.UserService;
-import com.midtrans.httpclient.error.MidtransError;
 import com.midtrans.service.MidtransCoreApi;
 
 import lombok.RequiredArgsConstructor;
@@ -118,40 +116,29 @@ public class TransactionServiceImpl implements TransactionService {
                             "Transaction with order ID " + orderId + " not found.");
                 });
 
-        try {
-            JSONObject transactionResult = midtransCoreApi.checkTransaction(orderId);
-            log.info("Verified status for order_id {}: {}", orderId, transactionResult.toString());
+        String transactionStatus = (String) payload.get("transaction_status");
+        String fraudStatus = (String) payload.get("fraud_status");
 
-            String transactionStatus = transactionResult.getString("transaction_status");
-            String fraudStatus = transactionResult.optString("fraud_status");
-
-            if (transactionStatus.equals("capture")) {
-                if (fraudStatus.equals("accept")) {
-                    transaction.setStatus(TransactionStatus.SUCCESS);
-                } else if (fraudStatus.equals("challenge")) {
-                    transaction.setStatus(TransactionStatus.PENDING);
-                } else {
-                    transaction.setStatus(TransactionStatus.FAILED);
-                }
-            } else if (transactionStatus.equals("settlement")) {
+        if (transactionStatus.equals("capture")) {
+            if (fraudStatus.equals("accept")) {
                 transaction.setStatus(TransactionStatus.SUCCESS);
-            } else if (transactionStatus.equals("cancel") || transactionStatus.equals("deny")
-                    || transactionStatus.equals("expire")) {
-                transaction.setStatus(TransactionStatus.FAILED);
-            } else if (transactionStatus.equals("pending")) {
+            } else if (fraudStatus.equals("challenge")) {
                 transaction.setStatus(TransactionStatus.PENDING);
+            } else {
+                transaction.setStatus(TransactionStatus.FAILED);
             }
-
-            transactionRepository.save(transaction);
-            log.info("Successfully updated transaction status for order_id: {} to {}", orderId,
-                    transaction.getStatus());
-
-        } catch (MidtransError e) {
-            log.error("Failed to verify transaction status from Midtrans for order_id: " + orderId
-                    + ". Error: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to verify status with Midtrans");
+        } else if (transactionStatus.equals("settlement")) {
+            transaction.setStatus(TransactionStatus.SUCCESS);
+        } else if (transactionStatus.equals("cancel") || transactionStatus.equals("deny")
+                || transactionStatus.equals("expire")) {
+            transaction.setStatus(TransactionStatus.FAILED);
+        } else if (transactionStatus.equals("pending")) {
+            transaction.setStatus(TransactionStatus.PENDING);
         }
+
+        transactionRepository.save(transaction);
+        log.info("Successfully updated transaction status for order_id: {} to {}", orderId,
+                transaction.getStatus());
     }
 
     @Override
@@ -160,11 +147,7 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = transactionRepository.findByMidtransOrderId(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found"));
 
-        return TransactionResponse.builder()
-                .orderId(transaction.getMidtransOrderId())
-                .transactionStatus(transaction.getStatus().name())
-                .redirectUrl(getRedirectUrlBasedOnStatus(transaction.getStatus()))
-                .build();
+        return toTransactionResponse(transaction, getRedirectUrlBasedOnStatus(transaction.getStatus()));
     }
 
     private String getRedirectUrlBasedOnStatus(TransactionStatus status) {
