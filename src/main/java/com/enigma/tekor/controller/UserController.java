@@ -35,84 +35,83 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
-    private final JwtUtil jwtUtil;
+        private final UserService userService;
+        private final JwtUtil jwtUtil;
 
-    @GetMapping
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<CommonResponse<ProfileResponse>> getMyProfile(
-            @RequestHeader("Authorization") String token) {
+        @GetMapping
+        @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+        public ResponseEntity<CommonResponse<ProfileResponse>> getMyProfile(
+                        @RequestHeader("Authorization") String token) {
 
-        String userId = jwtUtil.getUserInfoByToken(token.replace("Bearer ", "")).get("userId");
-        ProfileResponse profile = userService.getProfileById(UUID.fromString(userId));
+                String userId = jwtUtil.getUserInfoByToken(token.replace("Bearer ", "")).get("userId");
+                ProfileResponse profile = userService.getProfileById(UUID.fromString(userId));
 
-        return ResponseEntity.ok(CommonResponse.<ProfileResponse>builder()
-                .status(HttpStatus.OK.getReasonPhrase())
-                .message("Successfully get profile")
-                .data(profile)
-                .build());
-    }
+                return ResponseEntity.ok(CommonResponse.<ProfileResponse>builder()
+                                .status(HttpStatus.OK.getReasonPhrase())
+                                .message("Successfully get profile")
+                                .data(profile)
+                                .build());
+        }
 
-    @PatchMapping
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<CommonResponse<ProfileResponse>> updateProfile(
-            @Valid @RequestBody UpdateProfileRequest request) {
+        @PatchMapping
+        @PreAuthorize("hasRole('USER')")
+        public ResponseEntity<CommonResponse<ProfileResponse>> updateProfile(
+                        @Valid @RequestBody UpdateProfileRequest request) {
 
-        ProfileResponse updatedProfile = userService.updateProfile(
-                getCurrentUserId(),
-                request);
+                ProfileResponse updatedProfile = userService.updateProfile(
+                                getCurrentUserId(),
+                                request);
 
-        return ResponseEntity.ok(CommonResponse.<ProfileResponse>builder()
-                .status(HttpStatus.OK.getReasonPhrase())
-                .message("Profile updated successfully")
-                .data(updatedProfile)
-                .build());
-    }
+                return ResponseEntity.ok(CommonResponse.<ProfileResponse>builder()
+                                .status(HttpStatus.OK.getReasonPhrase())
+                                .message("Profile updated successfully")
+                                .data(updatedProfile)
+                                .build());
+        }
 
-    @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<CommonResponse<ProfilePictureResponse>> updateProfilePicture(
-            @RequestParam("avatar") MultipartFile file) {
+        @PostMapping(value = "/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+        @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+        public ResponseEntity<CommonResponse<ProfilePictureResponse>> updateProfilePicture(
+                        @RequestParam("avatar") MultipartFile file) {
 
-        ProfilePictureResponse response = userService.updateProfilePicture(
-                getCurrentUserId(),
-                file);
+                ProfilePictureResponse response = userService.updateProfilePicture(
+                                getCurrentUserId(),
+                                file);
 
-        return ResponseEntity.ok(
-                CommonResponse.<ProfilePictureResponse>builder()
-                        .status(HttpStatus.OK.getReasonPhrase())
-                        .message("Profile picture updated successfully")
-                        .data(response)
-                        .build());
-    }
+                return ResponseEntity.ok(
+                                CommonResponse.<ProfilePictureResponse>builder()
+                                                .status(HttpStatus.OK.getReasonPhrase())
+                                                .message("Profile picture updated successfully")
+                                                .data(response)
+                                                .build());
+        }
 
-    @PreAuthorize("hasRole('ADMIN')")
-    private UUID getCurrentUserId() {
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userService.getUserIdByUsername(username);
-    }
+        @PreAuthorize("hasRole('ADMIN')")
+        private UUID getCurrentUserId() {
+                String username = SecurityContextHolder.getContext().getAuthentication().getName();
+                return userService.getUserIdByUsername(username);
+        }
 
-    @PostMapping(value = "/change-password", consumes = MediaType.APPLICATION_JSON_VALUE)
-    @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<CommonResponse<String>> changePassword(
-            @Valid @RequestBody ChangePasswordRequest request) {
-        userService.changePassword(getCurrentUserId(), request);
-        return ResponseEntity.ok(CommonResponse.<String>builder()
-                .status(HttpStatus.OK.getReasonPhrase())
-                .message("Password updated successfully.")
-                .build());
-    }
+        @PostMapping(value = "/change-password", consumes = MediaType.APPLICATION_JSON_VALUE)
+        @PreAuthorize("hasRole('USER')")
+        public ResponseEntity<CommonResponse<String>> changePassword(
+                        @Valid @RequestBody ChangePasswordRequest request) {
+                userService.changePassword(getCurrentUserId(), request);
+                return ResponseEntity.ok(CommonResponse.<String>builder()
+                                .status(HttpStatus.OK.getReasonPhrase())
+                                .message("Password updated successfully.")
+                                .build());
+        }
 
+        @GetMapping("/all")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<CommonResponse<List<UserResponse>>> getAllUsers() {
+                List<UserResponse> users = userService.getAllUsers();
 
-    @GetMapping("/all")
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CommonResponse<List<UserResponse>>> getAllUsers() {
-        List<UserResponse> users = userService.getAllUsers();
-
-        return ResponseEntity.ok(CommonResponse.<List<UserResponse>>builder()
-                .status("success")
-                .message("Successfully retrieved all users")
-                .data(users)
-                .build());
-    }
+                return ResponseEntity.ok(CommonResponse.<List<UserResponse>>builder()
+                                .status("success")
+                                .message("Successfully retrieved all users")
+                                .data(users)
+                                .build());
+        }
 }
