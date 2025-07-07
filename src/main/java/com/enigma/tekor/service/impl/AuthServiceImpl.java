@@ -161,7 +161,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         user.setIsVerified(true);
-        userService.update(user);
         emailVerificationTokenRepository.delete(verificationToken);
     }
 

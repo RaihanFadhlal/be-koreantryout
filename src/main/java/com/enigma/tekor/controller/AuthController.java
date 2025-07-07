@@ -1,7 +1,6 @@
 package com.enigma.tekor.controller;
 
 import java.net.URI;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -15,12 +14,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.enigma.tekor.dto.request.ForgotPasswordRequest;
 import com.enigma.tekor.dto.request.LoginRequest;
-import com.enigma.tekor.dto.request.RefreshTokenRequest;
 import com.enigma.tekor.dto.request.RegisterRequest;
 import com.enigma.tekor.dto.request.ResetPasswordRequest;
 import com.enigma.tekor.dto.response.CommonResponse;
 import com.enigma.tekor.dto.response.LoginResponse;
-import com.enigma.tekor.dto.response.TokenResponse;
 import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.service.AuthService;
 
@@ -67,7 +64,7 @@ public class AuthController {
     }
 
     @GetMapping("/verify")
-    public ResponseEntity<Void> verifyEmail(@RequestParam("token") String token) {
+    public ResponseEntity<Void> verifyEmail(@RequestParam String token) {
         authService.verifyEmail(token);
 
         return ResponseEntity.status(HttpStatus.FOUND)
