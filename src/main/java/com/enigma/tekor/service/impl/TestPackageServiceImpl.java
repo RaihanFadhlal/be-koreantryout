@@ -1,31 +1,5 @@
 package com.enigma.tekor.service.impl;
 
-import com.enigma.tekor.constant.QuestionType;
-import com.enigma.tekor.dto.request.CreateQuestionRequest;
-import com.enigma.tekor.dto.request.CreateTestPackageRequest;
-import com.enigma.tekor.dto.response.BundleResponse;
-import com.enigma.tekor.dto.response.ProductResponse;
-import com.enigma.tekor.entity.Question;
-import com.enigma.tekor.entity.TestPackage;
-import com.enigma.tekor.repository.QuestionRepository;
-import com.enigma.tekor.repository.TestPackageRepository;
-import com.enigma.tekor.service.BundleService;
-import com.enigma.tekor.service.QuestionService;
-import com.enigma.tekor.service.TestPackageService;
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.stereotype.Service;
-
-import com.enigma.tekor.dto.request.UpdateTestPackageRequest;
-import com.enigma.tekor.dto.response.TestPackageResponse;
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -33,6 +7,33 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import com.enigma.tekor.constant.QuestionType;
+import com.enigma.tekor.dto.request.CreateQuestionRequest;
+import com.enigma.tekor.dto.request.CreateTestPackageRequest;
+import com.enigma.tekor.dto.request.UpdateTestPackageRequest;
+import com.enigma.tekor.dto.response.BundleResponse;
+import com.enigma.tekor.dto.response.ProductResponse;
+import com.enigma.tekor.dto.response.TestPackageResponse;
+import com.enigma.tekor.entity.Question;
+import com.enigma.tekor.entity.TestPackage;
+import com.enigma.tekor.repository.QuestionRepository;
+import com.enigma.tekor.repository.TestPackageRepository;
+import com.enigma.tekor.service.BundleService;
+import com.enigma.tekor.service.QuestionService;
+import com.enigma.tekor.service.TestPackageService;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -56,7 +57,7 @@ public class TestPackageServiceImpl implements TestPackageService {
 
                 String questionText = getCellValue(row.getCell(0));
                 if (questionText == null || questionText.trim().isEmpty()) {
-                    continue; // Skip this row if questionText is null or empty
+                    continue;
                 }
                 QuestionType questionType = QuestionType.valueOf(getCellValue(row.getCell(1)).trim().toUpperCase());
                 String imageUrl = getCellValue(row.getCell(2));
