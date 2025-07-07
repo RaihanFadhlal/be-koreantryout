@@ -93,11 +93,7 @@ public class TransactionServiceImpl implements TransactionService {
         try {
             CreateTransactionResponse midtransResponse = midtransService.createTransaction(transaction);
 
-            return TransactionResponse.builder()
-                    .orderId(transaction.getMidtransOrderId())
-                    .redirectUrl(midtransResponse.getRedirectUrl())
-                    .transactionStatus(transaction.getStatus().name())
-                    .build();
+            return toTransactionResponse(transaction, midtransResponse.getRedirectUrl());
         } catch (Exception e) {
             throw new RuntimeException("Failed to create Midtrans transaction", e);
         }
