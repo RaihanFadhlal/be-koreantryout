@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 public interface TestPackageService {
-    void createTestPackageFromExcel(CreateTestPackageRequest request);
+    TestPackage createTestPackageFromExcel(CreateTestPackageRequest request);
     TestPackageResponse update(String id, UpdateTestPackageRequest request);
     TestPackageResponse getById(String id);
     TestPackage getOneById(UUID id);

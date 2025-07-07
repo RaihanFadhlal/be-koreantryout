@@ -36,6 +36,9 @@ public class Bundle {
 
     private BigDecimal discountPrice;
 
+    @Column(name = "image_url")
+    private String imageUrl = null;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
