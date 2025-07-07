@@ -72,12 +72,20 @@ public class TransactionServiceImpl implements TransactionService {
 
         if (request.getBundleId() != null) {
             Bundle bundle = bundleService.getBundleById(request.getBundleId());
-            transaction.setBundle(bundle);
-            transaction.setAmount(bundle.getPrice());
+            transaction.setBundle(bundle); 
+            if (bundle.getDiscountPrice() == null){
+                transaction.setAmount(bundle.getPrice());
+            } else {
+                transaction.setAmount(bundle.getDiscountPrice());
+            }
         } else {
             TestPackage testPackage = testPackageService.getOneById(request.getTestPackageId());
             transaction.setTestPackage(testPackage);
-            transaction.setAmount(testPackage.getPrice());
+            if (testPackage.getDiscountPrice() == null){
+                transaction.setAmount(testPackage.getPrice());
+            } else {
+                transaction.setAmount(testPackage.getDiscountPrice());
+            }
         }
 
         transactionRepository.save(transaction);
@@ -119,7 +127,6 @@ public class TransactionServiceImpl implements TransactionService {
 
             if (transactionStatus.equals("capture")) {
                 if (fraudStatus.equals("accept")) {
-
                     transaction.setStatus(TransactionStatus.SUCCESS);
                 } else if (fraudStatus.equals("challenge")) {
                     transaction.setStatus(TransactionStatus.PENDING);

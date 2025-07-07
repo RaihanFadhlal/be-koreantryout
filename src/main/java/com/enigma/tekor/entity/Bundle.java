@@ -27,13 +27,14 @@ public class Bundle {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
     private String name;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
     private BigDecimal price;
+
+    private BigDecimal discountPrice;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
