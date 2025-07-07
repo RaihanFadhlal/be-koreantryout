@@ -1275,7 +1275,71 @@ Kosong (empty body)
 
 ---
 
-### 8.4 Get User Test Attempts
+### 8.4 Get Test Attempt Details
+
+**Endpoint**: `GET /api/v1/test-attempts/{attemptId}/details`
+
+**Authorization**: Bearer Token (USER role required)
+
+**Description**: Mendapatkan detail lengkap dari sebuah test attempt, termasuk pertanyaan dan jawaban pengguna.
+
+#### Path Parameters
+
+| Parameter | Type   | Description | Required |
+| --------- | ------ | ----------- | -------- |
+| attemptId | String | ID attempt  | ✓        |
+
+#### Success Response `200 OK`
+
+```json
+{
+  "status": "OK",
+  "message": "Successfully retrieved test attempt details",
+  "data": {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "testPackageName": "Paket A",
+    "startTime": "2023-07-20T15:30:45",
+    "remainingDuration": 1200,
+    "questions": [
+      {
+        "id": "110e8400-e29b-41d4-a716-446655440000",
+        "number": 1,
+        "questionText": "Apa ibu kota Korea Selatan?",
+        "questionType": "READING",
+        "imageUrl": null,
+        "audioUrl": null,
+        "options": [
+          {
+            "id": "220e8400-e29b-41d4-a716-446655440000",
+            "optionText": "Seoul",
+          },
+          {
+            "id": "330e8400-e29b-41d4-a716-446655440000",
+            "optionText": "Busan",
+          }
+        ]
+      }
+    ],
+    "userAnswers": [
+      {
+        "id": "440e8400-e29b-41d4-a716-446655440000",
+        "questionId": "110e8400-e29b-41d4-a716-446655440000",
+        "optionId": "220e8400-e29b-41d4-a716-446655440000",
+      }
+    ]
+  }
+}
+```
+
+#### Error Responses
+
+- `401 Unauthorized`: Tidak terautentikasi
+- `403 Forbidden`: Bukan attempt milik user
+- `404 Not Found`: Attempt tidak ditemukan
+
+---
+
+### 8.5 Get User Test Attempts
 
 **Endpoint**: `GET /api/v1/test-attempts/my-tests`
 
@@ -1317,7 +1381,7 @@ Kosong (empty body)
 
 ---
 
-### 8.5 Get Completed Tests
+### 8.6 Get Completed Tests
 
 **Endpoint**: `GET /api/v1/test-attempts/my-tests/completed`
 
