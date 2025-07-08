@@ -1,13 +1,15 @@
 package com.enigma.tekor.service.impl;
 
-import java.time.ZoneId;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.enigma.tekor.dto.response.*;
+import com.enigma.tekor.entity.Question;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -19,15 +21,6 @@ import com.enigma.tekor.constant.TransactionStatus;
 import com.enigma.tekor.dto.request.AIEvaluationRequest;
 import com.enigma.tekor.dto.request.SaveAnswerRequest;
 import com.enigma.tekor.dto.request.UserAnswerEvaluationRequest;
-import com.enigma.tekor.dto.response.InProgressAttempt;
-import com.enigma.tekor.dto.response.OptionResponse;
-import com.enigma.tekor.dto.response.QuestionResponse;
-import com.enigma.tekor.dto.response.ReadyTestPackage;
-import com.enigma.tekor.dto.response.TestAttemptDetailResponse;
-import com.enigma.tekor.dto.response.TestAttemptResponse;
-import com.enigma.tekor.dto.response.TestPackageResponse;
-import com.enigma.tekor.dto.response.UserAnswerResponse;
-import com.enigma.tekor.dto.response.UserTestAttemptResponse;
 import com.enigma.tekor.entity.BundlePackage;
 import com.enigma.tekor.entity.TestAttempt;
 import com.enigma.tekor.entity.TestPackage;
@@ -89,12 +82,13 @@ public class TestAttemptServiceImpl implements TestAttemptService {
             }
         }
 
+        LocalDateTime now = LocalDateTime.now();
         TestAttempt newAttempt = TestAttempt.builder()
                 .user(currentUser)
                 .testPackage(testPackageToAttempt)
-                .startTime(new Date())
+                .startTime(now)
+                .finishTime(now.plusSeconds(3000))
                 .status(TestAttemptStatus.IN_PROGRESS)
-                .remainingDuration(3000L)
                 .build();
 
         testAttemptRepository.save(newAttempt);
@@ -118,20 +112,14 @@ public class TestAttemptServiceImpl implements TestAttemptService {
             throw new BadRequestException("This test is no longer in progress");
         }
 
-        if (request.getRemainingTimeInSeconds() <= 0) {
-            throw new BadRequestException("Waktu habis, tidak dapat menyimpan jawaban.");
-        }
-
-        if (attempt.getRemainingDuration() != null && request.getRemainingTimeInSeconds() > attempt.getRemainingDuration()) {
-            throw new BadRequestException("Waktu tersisa tidak valid. Tidak boleh lebih besar dari waktu sebelumnya.");
+        if (LocalDateTime.now().isAfter(attempt.getFinishTime())) {
+            throw new BadRequestException("Waktu ujian telah berakhir. Jawaban tidak dapat disimpan.");
         }
 
         userAnswerService.saveAnswer(request, attempt);
 
         Integer score = userAnswerService.calculateScore(attempt);
         attempt.setScore(Float.valueOf(score));
-
-        attempt.setRemainingDuration(request.getRemainingTimeInSeconds());
         testAttemptRepository.save(attempt);
     }
 
@@ -155,7 +143,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         long totalCorrect = attempt.getUserAnswers().stream().filter(UserAnswer::getIsCorrect).count();
         long totalIncorrect = attempt.getUserAnswers().size() - totalCorrect;
 
-        attempt.setEndTime(new Date());
+        attempt.setEndTime(LocalDateTime.now());
         attempt.setStatus(TestAttemptStatus.COMPLETED);
         attempt.setScore(Float.valueOf(score));
         testAttemptRepository.save(attempt);
@@ -191,10 +179,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
     }
 
     private long countAllowedAttempts(User user, TestPackage testPackage) {
-        log.info("Checking allowed attempts for user ID: {} and test package ID: {}", user.getId(), testPackage.getId());
         List<Transaction> completedTransactions = transactionRepository.findByUserAndStatus(user, TransactionStatus.SUCCESS);
-        log.info("Found {} completed transactions for user ID: {}", completedTransactions.size(), user.getId());
-        
         long count = 0;
         for (Transaction trx : completedTransactions) {
             if (trx.getTestPackage() != null) {
@@ -210,7 +195,6 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 }
             }
         }
-        log.info("Final allowed attempts count for user ID: {} and test package ID: {}: {}", user.getId(), testPackage.getId(), count);
         return count;
     }
 
@@ -228,11 +212,11 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 .packageId(testAttempt.getTestPackage().getId().toString())
                 .startTime(testAttempt.getStartTime())
                 .endTime(testAttempt.getEndTime())
+                .finishTime(testAttempt.getFinishTime())
                 .score(testAttempt.getScore())
                 .status(testAttempt.getStatus())
                 .aiEvaluationResult(testAttempt.getAiEvaluationResult())
                 .createdAt(testAttempt.getCreatedAt())
-                .remainingDuration(testAttempt.getRemainingDuration())
                 .build();
     }
 
@@ -261,7 +245,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                         .attemptId(attempt.getId().toString())
                         .testPackage(mapToTestPackageResponse(attempt.getTestPackage()))
                         .startTime(attempt.getStartTime())
-                        .remainingDuration(attempt.getRemainingDuration())
+                        .finishTime(attempt.getFinishTime())
                         .build())
                 .collect(Collectors.toList());
 
@@ -299,8 +283,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                                 .map(transaction -> ReadyTestPackage.builder()
                                         .transactionId(transaction.getId().toString())
                                         .testPackage(mapToTestPackageResponse(testPackage))
-                                        .purchaseDate(Date.from(
-                                                transaction.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()))
+                                        .purchaseDate(transaction.getCreatedAt())
                                         .build());
                     } else {
                         return Stream.empty();
@@ -377,6 +360,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         }
 
         List<QuestionResponse> questionResponses = attempt.getTestPackage().getQuestions().stream()
+                .sorted(Comparator.comparing(Question::getNumber))
                 .map(question -> QuestionResponse.builder()
                         .id(question.getId())
                         .questionText(question.getQuestionText())
@@ -405,7 +389,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 .id(attempt.getId())
                 .testPackageName(attempt.getTestPackage().getName())
                 .startTime(attempt.getStartTime())
-                .remainingDuration(attempt.getRemainingDuration())
+                .finishTime(attempt.getFinishTime())
                 .questions(questionResponses)
                 .userAnswers(userAnswerResponses)
                 .build();

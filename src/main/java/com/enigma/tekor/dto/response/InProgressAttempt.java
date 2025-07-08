@@ -1,7 +1,6 @@
 package com.enigma.tekor.dto.response;
 
-import java.util.Date;
-
+import java.time.LocalDateTime;
 
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +11,7 @@ public class InProgressAttempt {
 
     private String attemptId;
     private TestPackageResponse testPackage;
-    private Date startTime;
-    private Long remainingDuration; 
+    private LocalDateTime startTime;
+    private LocalDateTime finishTime;
     
 }

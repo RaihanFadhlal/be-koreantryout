@@ -4,8 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.util.Date;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -15,5 +14,5 @@ public class SubmitAttemptResponse {
     private Integer totalCorrect;
     private Integer totalIncorrect;
     private Float score;
-    private Date completionTime;
+    private LocalDateTime completionTime;
 }
