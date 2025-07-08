@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
@@ -45,20 +46,28 @@ public class TestPackageServiceImpl implements TestPackageService {
     private final QuestionRepository questionRepository;
 
     @Override
-    @Transactional(rollbackOn = Exception.class)
-    public TestPackage createTestPackageFromExcel(CreateTestPackageRequest request) {
-        List<Question> questionsForPackage = new ArrayList<>();
+@Transactional(rollbackOn = Exception.class)
+public TestPackage createTestPackageFromExcel(CreateTestPackageRequest request) {
+    List<Question> questionsForPackage = new ArrayList<>();
 
-        try (Workbook workbook = new XSSFWorkbook(request.getFile().getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
-            Integer number = 1;
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
+    try (Workbook workbook = new XSSFWorkbook(request.getFile().getInputStream())) {
+        Sheet sheet = workbook.getSheetAt(0);
+        Integer number = 1;
+        for (Row row : sheet) {
+            if (row.getRowNum() == 0) continue; 
 
-                String questionText = getCellValue(row.getCell(0));
-                if (questionText == null || questionText.trim().isEmpty()) {
-                    continue;
-                }
+            
+            if (isRowEmpty(row)) {
+                continue;
+            }
+
+            String questionText = getCellValue(row.getCell(0));
+          
+            if (questionText == null || questionText.trim().isEmpty()) {
+                questionText = " ";
+            }
+            
+            try {
                 QuestionType questionType = QuestionType.valueOf(getCellValue(row.getCell(1)).trim().toUpperCase());
                 String imageUrl = getCellValue(row.getCell(2));
                 String audioUrl = getCellValue(row.getCell(3));
@@ -89,22 +98,26 @@ public class TestPackageServiceImpl implements TestPackageService {
                 Question savedQuestion = questionService.createQuestionWithOptions(questionRequest);
                 questionsForPackage.add(savedQuestion);
                 number++;
+            } catch (Exception e) {
+                System.err.println("Error processing row " + (row.getRowNum() + 1) + ": " + e.getMessage());
+                continue;
             }
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse Excel file: " + e.getMessage());
         }
-
-        TestPackage testPackage = new TestPackage();
-        testPackage.setName(request.getName());
-        testPackage.setDescription(request.getDescription());
-        testPackage.setImageUrl(request.getImageUrl());
-        testPackage.setPrice(request.getPrice());
-        testPackage.setDiscountPrice(request.getDiscountPrice());
-        testPackage.setIsTrial(request.getPrice().compareTo(BigDecimal.ZERO) <= 0);
-        testPackage.setQuestions(questionsForPackage);
-
-        return testPackageRepository.save(testPackage);
+    } catch (IOException e) {
+        throw new RuntimeException("Failed to parse Excel file: " + e.getMessage());
     }
+
+    TestPackage testPackage = new TestPackage();
+    testPackage.setName(request.getName());
+    testPackage.setDescription(request.getDescription());
+    testPackage.setImageUrl(request.getImageUrl());
+    testPackage.setPrice(request.getPrice());
+    testPackage.setDiscountPrice(request.getDiscountPrice());
+    testPackage.setIsTrial(request.getPrice().compareTo(BigDecimal.ZERO) <= 0);
+    testPackage.setQuestions(questionsForPackage);
+
+    return testPackageRepository.save(testPackage);
+}
 
     @Override
     public TestPackageResponse update(String id, UpdateTestPackageRequest request) {
@@ -210,4 +223,22 @@ public class TestPackageServiceImpl implements TestPackageService {
             default -> null;
         };
     }
+
+    private boolean isRowEmpty(Row row) {
+        if (row == null) {
+            return true;
+        }
+        if (row.getLastCellNum() <= 0) {
+            return true;
+        }
+        for (int cellNum = row.getFirstCellNum(); cellNum < row.getLastCellNum(); cellNum++) {
+            Cell cell = row.getCell(cellNum);
+            if (cell != null && cell.getCellType() != CellType.BLANK && 
+                !cell.toString().trim().isEmpty()) {
+                return false;
+            }
+        }
+        return true;
+    }
 }
+
