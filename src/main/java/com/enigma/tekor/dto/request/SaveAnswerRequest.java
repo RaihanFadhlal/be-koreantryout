@@ -20,7 +20,4 @@ public class SaveAnswerRequest {
     @NotNull(message = "Option ID is required")
     private UUID optionId;
 
-    @NotNull(message = "Remaining time is required")
-    private Long remainingTimeInSeconds;
-
 }

@@ -141,7 +141,8 @@ public class TestAttemptServiceImpl implements TestAttemptService {
 
         Integer score = userAnswerService.calculateScore(attempt);
         long totalCorrect = attempt.getUserAnswers().stream().filter(UserAnswer::getIsCorrect).count();
-        long totalIncorrect = attempt.getUserAnswers().size() - totalCorrect;
+        int totalQuestions = attempt.getTestPackage().getQuestions().size();
+        long totalIncorrect = totalQuestions - totalCorrect;
 
         attempt.setEndTime(LocalDateTime.now());
         attempt.setStatus(TestAttemptStatus.COMPLETED);
