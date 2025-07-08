@@ -1,12 +1,39 @@
 package com.enigma.tekor.service.impl;
 
+import java.time.ZoneId;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+
 import com.enigma.tekor.constant.TestAttemptStatus;
 import com.enigma.tekor.constant.TransactionStatus;
 import com.enigma.tekor.dto.request.AIEvaluationRequest;
 import com.enigma.tekor.dto.request.SaveAnswerRequest;
 import com.enigma.tekor.dto.request.UserAnswerEvaluationRequest;
-import com.enigma.tekor.dto.response.*;
-import com.enigma.tekor.entity.*;
+import com.enigma.tekor.dto.response.InProgressAttempt;
+import com.enigma.tekor.dto.response.OptionResponse;
+import com.enigma.tekor.dto.response.QuestionResponse;
+import com.enigma.tekor.dto.response.ReadyTestPackage;
+import com.enigma.tekor.dto.response.TestAttemptDetailResponse;
+import com.enigma.tekor.dto.response.TestAttemptResponse;
+import com.enigma.tekor.dto.response.TestPackageResponse;
+import com.enigma.tekor.dto.response.UserAnswerResponse;
+import com.enigma.tekor.dto.response.UserTestAttemptResponse;
+import com.enigma.tekor.entity.BundlePackage;
+import com.enigma.tekor.entity.TestAttempt;
+import com.enigma.tekor.entity.TestPackage;
+import com.enigma.tekor.entity.Transaction;
+import com.enigma.tekor.entity.User;
+import com.enigma.tekor.entity.UserAnswer;
 import com.enigma.tekor.exception.AccessForbiddenException;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.exception.ConflictException;
@@ -20,20 +47,10 @@ import com.enigma.tekor.service.AIEvaluationService;
 import com.enigma.tekor.service.TestAttemptService;
 import com.enigma.tekor.service.UserAnswerService;
 import com.enigma.tekor.service.UserService;
+
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -67,7 +84,8 @@ public class TestAttemptServiceImpl implements TestAttemptService {
             if (allowedAttempts == 0) {
                 throw new AccessForbiddenException("You have not purchased this test package.");
             } else {
-                throw new ConflictException("You have already used all your available attempts for this test package. Please purchase again to retake.");
+                throw new ConflictException(
+                        "You have already used all your available attempts for this test package. Please purchase again to retake.");
             }
         }
 
@@ -107,7 +125,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         if (attempt.getRemainingDuration() != null && request.getRemainingTimeInSeconds() > attempt.getRemainingDuration()) {
             throw new BadRequestException("Waktu tersisa tidak valid. Tidak boleh lebih besar dari waktu sebelumnya.");
         }
-        
+
         userAnswerService.saveAnswer(request, attempt);
 
         Integer score = userAnswerService.calculateScore(attempt);
@@ -165,7 +183,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 .completionTime(attempt.getEndTime())
                 .build();
     }
-    
+
     @Override
     public TestAttempt getTestAttemptEntityById(String id) {
         return testAttemptRepository.findById(UUID.fromString(id))
@@ -173,7 +191,9 @@ public class TestAttemptServiceImpl implements TestAttemptService {
     }
 
     private long countAllowedAttempts(User user, TestPackage testPackage) {
+        log.info("Checking allowed attempts for user ID: {} and test package ID: {}", user.getId(), testPackage.getId());
         List<Transaction> completedTransactions = transactionRepository.findByUserAndStatus(user, TransactionStatus.SUCCESS);
+        log.info("Found {} completed transactions for user ID: {}", completedTransactions.size(), user.getId());
         
         long count = 0;
         for (Transaction trx : completedTransactions) {
@@ -190,6 +210,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 }
             }
         }
+        log.info("Final allowed attempts count for user ID: {} and test package ID: {}: {}", user.getId(), testPackage.getId(), count);
         return count;
     }
 
@@ -222,7 +243,8 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 .description(testPackage.getDescription())
                 .imageUrl(testPackage.getImageUrl())
                 .price(testPackage.getPrice() != null ? testPackage.getPrice().doubleValue() : null)
-                .discountPrice(testPackage.getDiscountPrice() != null ? testPackage.getDiscountPrice().doubleValue() : null)
+                .discountPrice(
+                        testPackage.getDiscountPrice() != null ? testPackage.getDiscountPrice().doubleValue() : null)
                 .build();
     }
 
@@ -232,7 +254,8 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User currentUser = userDetails.getUser();
 
-        List<TestAttempt> inProgressAttempts = testAttemptRepository.findByUserAndStatus(currentUser, TestAttemptStatus.IN_PROGRESS);
+        List<TestAttempt> inProgressAttempts = testAttemptRepository.findByUserAndStatus(currentUser,
+                TestAttemptStatus.IN_PROGRESS);
         List<InProgressAttempt> inProgress = inProgressAttempts.stream()
                 .map(attempt -> InProgressAttempt.builder()
                         .attemptId(attempt.getId().toString())
@@ -242,36 +265,46 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                         .build())
                 .collect(Collectors.toList());
 
-        List<Transaction> completedTransactions = transactionRepository.findByUserAndStatus(currentUser, TransactionStatus.SUCCESS);
-        List<ReadyTestPackage> readyToStart = completedTransactions.stream()
-                .filter(transaction -> {
-                    TestPackage testPackage = transaction.getTestPackage();
-                    if (testPackage == null && transaction.getBundle() != null) {
-                        return transaction.getBundle().getBundlePackages().stream()
-                                .anyMatch(bundlePackage ->
-                                        testAttemptRepository.findByUserAndTestPackage(currentUser, bundlePackage.getTestPackage()).isEmpty()
-                                );
-                    } else if (testPackage != null) {
-                        return testAttemptRepository.findByUserAndTestPackage(currentUser, testPackage).isEmpty();
+        List<Transaction> completedTransactions = transactionRepository.findByUserAndStatus(currentUser,
+                TransactionStatus.SUCCESS);
+        List<TestAttempt> allAttempts = testAttemptRepository.findByUser(currentUser);
+
+        Map<TestPackage, Long> purchasedCount = completedTransactions.stream()
+                .flatMap(t -> {
+                    if (t.getTestPackage() != null) {
+                        return Stream.of(t.getTestPackage());
+                    } else if (t.getBundle() != null) {
+                        return t.getBundle().getBundlePackages().stream().map(BundlePackage::getTestPackage);
                     }
-                    return false;
+                    return Stream.empty();
                 })
-                .map(transaction -> {
-                    TestPackage testPackage = transaction.getTestPackage();
-                    if (testPackage == null && transaction.getBundle() != null) {
-                        testPackage = transaction.getBundle().getBundlePackages().stream()
-                                .filter(bundlePackage ->
-                                        testAttemptRepository.findByUserAndTestPackage(currentUser, bundlePackage.getTestPackage()).isEmpty()
-                                )
-                                .map(BundlePackage::getTestPackage)
-                                .findFirst()
-                                .orElse(null);
+                .collect(Collectors.groupingBy(tp -> tp, Collectors.counting()));
+
+        Map<TestPackage, Long> attemptedCount = allAttempts.stream()
+                .collect(Collectors.groupingBy(TestAttempt::getTestPackage, Collectors.counting()));
+
+        List<ReadyTestPackage> readyToStart = purchasedCount.entrySet().stream()
+                .flatMap(entry -> {
+                    TestPackage testPackage = entry.getKey();
+                    long totalPurchased = entry.getValue();
+                    long totalAttempted = attemptedCount.getOrDefault(testPackage, 0L);
+                    long availableAttempts = totalPurchased - totalAttempted;
+
+                    if (availableAttempts > 0) {
+                        return completedTransactions.stream()
+                                .filter(t -> (t.getTestPackage() != null && t.getTestPackage().equals(testPackage)) ||
+                                        (t.getBundle() != null && t.getBundle().getBundlePackages().stream()
+                                                .anyMatch(bp -> bp.getTestPackage().equals(testPackage))))
+                                .limit(availableAttempts)
+                                .map(transaction -> ReadyTestPackage.builder()
+                                        .transactionId(transaction.getId().toString())
+                                        .testPackage(mapToTestPackageResponse(testPackage))
+                                        .purchaseDate(Date.from(
+                                                transaction.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()))
+                                        .build());
+                    } else {
+                        return Stream.empty();
                     }
-                    return ReadyTestPackage.builder()
-                            .transactionId(transaction.getId().toString())
-                            .testPackage(mapToTestPackageResponse(testPackage))
-                            .purchaseDate(Date.from(transaction.getCreatedAt().atZone(ZoneId.systemDefault()).toInstant()))
-                            .build();
                 })
                 .collect(Collectors.toList());
 
@@ -287,7 +320,8 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User currentUser = userDetails.getUser();
 
-        List<TestAttempt> completedAttempts = testAttemptRepository.findByUserIdAndStatus(currentUser.getId(), TestAttemptStatus.COMPLETED);
+        List<TestAttempt> completedAttempts = testAttemptRepository.findByUserIdAndStatus(currentUser.getId(),
+                TestAttemptStatus.COMPLETED);
 
         return completedAttempts.stream()
                 .map(this::mapToResponse)
@@ -338,7 +372,8 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         }
 
         if (!attempt.getStatus().equals(TestAttemptStatus.IN_PROGRESS)) {
-            throw new BadRequestException("Test attempt is not in progress. Details can only be viewed for in-progress tests.");
+            throw new BadRequestException(
+                    "Test attempt is not in progress. Details can only be viewed for in-progress tests.");
         }
 
         List<QuestionResponse> questionResponses = attempt.getTestPackage().getQuestions().stream()
@@ -361,7 +396,8 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 .map(userAnswer -> UserAnswerResponse.builder()
                         .id(userAnswer.getId())
                         .questionId(userAnswer.getQuestion().getId())
-                        .selectedOptionId(userAnswer.getSelectedOption()!= null ? userAnswer.getSelectedOption().getId() : null)
+                        .selectedOptionId(
+                                userAnswer.getSelectedOption() != null ? userAnswer.getSelectedOption().getId() : null)
                         .build())
                 .collect(Collectors.toList());
 
