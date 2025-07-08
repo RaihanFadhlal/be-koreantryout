@@ -3,6 +3,7 @@ package com.enigma.tekor.controller;
 import com.enigma.tekor.dto.request.SaveAnswerRequest;
 import java.util.List;
 import com.enigma.tekor.dto.response.CommonResponse;
+import com.enigma.tekor.dto.response.SubmitAttemptResponse;
 import com.enigma.tekor.dto.response.TestAttemptDetailResponse;
 import com.enigma.tekor.dto.response.TestAttemptResponse;
 import com.enigma.tekor.dto.response.UserTestAttemptResponse;
@@ -47,12 +48,12 @@ public class TestAttemptController {
 
     @PostMapping("/{attemptId}/submit")
     @PreAuthorize("hasRole('USER')")
-    public ResponseEntity<CommonResponse<String>> submitAttempt(@PathVariable String attemptId) {
-        testAttemptService.submitAttempt(attemptId);
-        return ResponseEntity.ok(CommonResponse.<String>builder()
+    public ResponseEntity<CommonResponse<SubmitAttemptResponse>> submitAttempt(@PathVariable String attemptId) {
+        SubmitAttemptResponse response = testAttemptService.submitAttempt(attemptId);
+        return ResponseEntity.ok(CommonResponse.<SubmitAttemptResponse>builder()
                 .status(HttpStatus.OK.getReasonPhrase())
                 .message("Test attempt submitted successfully")
-                .data("OK")
+                .data(response)
                 .build());
     }
 

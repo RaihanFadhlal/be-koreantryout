@@ -18,5 +18,6 @@ public class BundleRequest {
     private String description;
     private String imageUrl;
     private BigDecimal price;
+    private BigDecimal discountPrice;
     private List<UUID> packageIds;
 }

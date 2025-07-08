@@ -19,5 +19,6 @@ public class BundleResponse {
     private String description;
     private String imageUrl;
     private BigDecimal price;
+    private BigDecimal discountPrice;
     private List<PackageInBundleResponse> packages;
 }
