@@ -76,6 +76,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 .testPackage(testPackageToAttempt)
                 .startTime(new Date())
                 .status(TestAttemptStatus.IN_PROGRESS)
+                .remainingDuration(3000L)
                 .build();
 
         testAttemptRepository.save(newAttempt);
@@ -98,6 +99,15 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         if (!attempt.getStatus().equals(TestAttemptStatus.IN_PROGRESS)) {
             throw new BadRequestException("This test is no longer in progress");
         }
+
+        if (request.getRemainingTimeInSeconds() <= 0) {
+            throw new BadRequestException("Waktu habis, tidak dapat menyimpan jawaban.");
+        }
+
+        if (attempt.getRemainingDuration() != null && request.getRemainingTimeInSeconds() > attempt.getRemainingDuration()) {
+            throw new BadRequestException("Waktu tersisa tidak valid. Tidak boleh lebih besar dari waktu sebelumnya.");
+        }
+        
         userAnswerService.saveAnswer(request, attempt);
 
         Integer score = userAnswerService.calculateScore(attempt);
@@ -109,7 +119,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
 
     @Transactional
     @Override
-    public void submitAttempt(String attemptId) {
+    public SubmitAttemptResponse submitAttempt(String attemptId) {
         TestAttempt attempt = getTestAttemptEntityById(attemptId);
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -124,6 +134,8 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         }
 
         Integer score = userAnswerService.calculateScore(attempt);
+        long totalCorrect = attempt.getUserAnswers().stream().filter(UserAnswer::getIsCorrect).count();
+        long totalIncorrect = attempt.getUserAnswers().size() - totalCorrect;
 
         attempt.setEndTime(new Date());
         attempt.setStatus(TestAttemptStatus.COMPLETED);
@@ -145,6 +157,13 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                     attempt.setAiEvaluationResult(evaluation);
                     testAttemptRepository.save(attempt);
                 });
+
+        return SubmitAttemptResponse.builder()
+                .totalCorrect((int) totalCorrect)
+                .totalIncorrect((int) totalIncorrect)
+                .score(attempt.getScore())
+                .completionTime(attempt.getEndTime())
+                .build();
     }
     
     @Override
@@ -154,31 +173,23 @@ public class TestAttemptServiceImpl implements TestAttemptService {
     }
 
     private long countAllowedAttempts(User user, TestPackage testPackage) {
-        log.info("Checking allowed attempts for user ID: {} and test package ID: {}", user.getId(), testPackage.getId());
         List<Transaction> completedTransactions = transactionRepository.findByUserAndStatus(user, TransactionStatus.SUCCESS);
-        log.info("Found {} completed transactions for user ID: {}", completedTransactions.size(), user.getId());
         
         long count = 0;
         for (Transaction trx : completedTransactions) {
-            log.info("Processing transaction ID: {}, Status: {}", trx.getId(), trx.getStatus());
             if (trx.getTestPackage() != null) {
-                log.info("Transaction has test package ID: {}", trx.getTestPackage().getId());
                 if (trx.getTestPackage().getId().equals(testPackage.getId())) {
                     count++;
-                    log.info("Match found for test package. Current count: {}", count);
                 }
             }
             if (trx.getBundle() != null) {
-                log.info("Transaction has bundle ID: {}", trx.getBundle().getId());
                 boolean packageInBundle = trx.getBundle().getBundlePackages().stream()
                         .anyMatch(bundlePackage -> bundlePackage.getTestPackage().getId().equals(testPackage.getId()));
                 if (packageInBundle) {
                     count++;
-                    log.info("Match found for package in bundle. Current count: {}", count);
                 }
             }
         }
-        log.info("Final allowed attempts count for user ID: {} and test package ID: {}: {}", user.getId(), testPackage.getId(), count);
         return count;
     }
 
@@ -200,6 +211,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 .status(testAttempt.getStatus())
                 .aiEvaluationResult(testAttempt.getAiEvaluationResult())
                 .createdAt(testAttempt.getCreatedAt())
+                .remainingDuration(testAttempt.getRemainingDuration())
                 .build();
     }
 

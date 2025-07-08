@@ -25,6 +25,7 @@ public class TestAttemptResponse {
     private Date startTime;
     private Date endTime;
     private Float score;
+    private Long remainingDuration;
     private TestAttemptStatus status;
     private String aiEvaluationResult;
     private Date createdAt;

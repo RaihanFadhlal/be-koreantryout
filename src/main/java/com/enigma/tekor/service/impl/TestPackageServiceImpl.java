@@ -169,6 +169,7 @@ public class TestPackageServiceImpl implements TestPackageService {
                         .description(br.getDescription())
                         .imageUrl(br.getImageUrl())
                         .price(br.getPrice())
+                        .discountPrice(br.getDiscountPrice())
                         .type("bundle")
                         .build())
                 .toList();
