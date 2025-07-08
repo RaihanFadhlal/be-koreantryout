@@ -59,6 +59,7 @@ public class QuestionServiceImpl implements QuestionService {
     public Question createQuestionWithOptions(CreateQuestionRequest request) {
         Question question = new Question();
         question.setQuestionText(request.getQuestionText());
+        question.setQuestionDesc(request.getQuestionDesc());
         question.setQuestionType(request.getQuestionType());
         question.setImageUrl(request.getImageUrl());
         question.setAudioUrl(request.getAudioUrl());
