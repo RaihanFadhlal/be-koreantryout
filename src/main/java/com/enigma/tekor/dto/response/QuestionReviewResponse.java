@@ -15,6 +15,7 @@ import java.util.UUID;
 public class QuestionReviewResponse {
     private UUID questionId;
     private String questionText;
+    private String questionAudio;
     private List<OptionResponse> options;
     private UUID selectedOptionId;
     private UUID correctOptionId;
