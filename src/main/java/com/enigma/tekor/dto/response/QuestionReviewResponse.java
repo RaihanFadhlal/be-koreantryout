@@ -19,4 +19,5 @@ public class QuestionReviewResponse {
     private UUID selectedOptionId;
     private UUID correctOptionId;
     private Boolean isCorrect;
+    private String correctAnswerText;
 }

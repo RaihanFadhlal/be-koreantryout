@@ -436,6 +436,15 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                         isCorrect = false;
                     }
 
+                    String correctAnswerText = null;
+                    if (!isCorrect && correctOptionId != null) {
+                        correctAnswerText = question.getOptions().stream()
+                                .filter(option -> option.getId().equals(correctOptionId))
+                                .map(option -> option.getOptionText())
+                                .findFirst()
+                                .orElse(null);
+                    }
+
                     return QuestionReviewResponse.builder()
                             .questionId(question.getId())
                             .questionText(question.getQuestionText())
@@ -448,6 +457,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                             .selectedOptionId(selectedOptionId)
                             .correctOptionId(correctOptionId)
                             .isCorrect(isCorrect)
+                            .correctAnswerText(correctAnswerText)
                             .build();
                 })
                 .collect(Collectors.toList());
