@@ -30,7 +30,7 @@ public class BundleController {
 
     private final BundleService bundleService;
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PostMapping
     public ResponseEntity<CommonResponse<BundleResponse>> createBundle(@RequestBody BundleRequest request) {
         BundleResponse bundleResponse = bundleService.create(request);
@@ -64,7 +64,7 @@ public class BundleController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @PutMapping("/{id}")
     public ResponseEntity<CommonResponse<BundleResponse>> updateBundle(@PathVariable UUID id, @RequestBody BundleUpdateRequest request) {
         BundleResponse bundleResponse = bundleService.update(id, request);
@@ -76,7 +76,7 @@ public class BundleController {
         return ResponseEntity.ok(response);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN')")
     @DeleteMapping("/{id}")
     public ResponseEntity<CommonResponse<String>> deleteBundle(@PathVariable UUID id) {
         bundleService.delete(id);
