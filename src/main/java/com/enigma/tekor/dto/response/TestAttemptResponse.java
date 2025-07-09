@@ -27,4 +27,5 @@ public class TestAttemptResponse {
     private TestAttemptStatus status;
     private String aiEvaluationResult;
     private LocalDateTime createdAt;
+    private String testPackageName;
 }

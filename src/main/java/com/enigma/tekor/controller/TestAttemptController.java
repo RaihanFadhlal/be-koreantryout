@@ -6,6 +6,7 @@ import com.enigma.tekor.dto.response.CommonResponse;
 import com.enigma.tekor.dto.response.SubmitAttemptResponse;
 import com.enigma.tekor.dto.response.TestAttemptDetailResponse;
 import com.enigma.tekor.dto.response.TestAttemptResponse;
+import com.enigma.tekor.dto.response.TestAttemptReviewResponse;
 import com.enigma.tekor.dto.response.UserTestAttemptResponse;
 import com.enigma.tekor.service.TestAttemptService;
 import lombok.RequiredArgsConstructor;
@@ -86,6 +87,17 @@ public class TestAttemptController {
         return ResponseEntity.ok(CommonResponse.<TestAttemptDetailResponse>builder()
                 .status(HttpStatus.OK.getReasonPhrase())
                 .message("Successfully retrieved test attempt details")
+                .data(response)
+                .build());
+    }
+
+    @GetMapping("/{attemptId}/review")
+    @PreAuthorize("hasRole('USER')")
+    public ResponseEntity<CommonResponse<TestAttemptReviewResponse>> getTestAttemptReview(@PathVariable String attemptId) {
+        TestAttemptReviewResponse response = testAttemptService.getTestAttemptReview(attemptId);
+        return ResponseEntity.ok(CommonResponse.<TestAttemptReviewResponse>builder()
+                .status(HttpStatus.OK.getReasonPhrase())
+                .message("Successfully retrieved test attempt review")
                 .data(response)
                 .build());
     }
