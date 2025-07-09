@@ -9,12 +9,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.enigma.tekor.dto.request.BundleRequest;
+import com.enigma.tekor.dto.request.BundleUpdateRequest;
 import com.enigma.tekor.dto.response.BundleResponse;
 import com.enigma.tekor.dto.response.PackageInBundleResponse;
 import com.enigma.tekor.entity.Bundle;
 import com.enigma.tekor.entity.BundlePackage;
 import com.enigma.tekor.entity.TestPackage;
 import com.enigma.tekor.exception.BadRequestException;
+import com.enigma.tekor.exception.NotFoundException;
 import com.enigma.tekor.repository.BundleRepository;
 import com.enigma.tekor.service.BundlePackageService;
 import com.enigma.tekor.service.BundleService;
@@ -73,13 +75,35 @@ public class BundleServiceImpl implements BundleService {
 
     @Override
     public BundleResponse getById(UUID id) {
-        Bundle bundle = bundleRepository.findById(id).orElseThrow(() -> new RuntimeException("Bundle not found"));
+        Bundle bundle = bundleRepository.findById(id).orElseThrow(() -> new NotFoundException("Bundle not found"));
         return toBundleResponse(bundle);
     }
 
     @Override
     public Bundle getBundleById(UUID id) {
-        return bundleRepository.findById(id).orElseThrow(() -> new RuntimeException("Bundle not found"));
+        return bundleRepository.findById(id).orElseThrow(() -> new NotFoundException("Bundle not found"));
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public BundleResponse update(UUID id, BundleUpdateRequest request) {
+        Bundle bundle = bundleRepository.findById(id).orElseThrow(() -> new NotFoundException("Bundle not found"));
+
+        if (request.getName() != null) {
+            bundle.setName(request.getName());
+        }
+        if (request.getDescription() != null) {
+            bundle.setDescription(request.getDescription());
+        }
+        if (request.getPrice() != null) {
+            bundle.setPrice(request.getPrice());
+        }
+        if (request.getDiscountPrice() != null) {
+            bundle.setDiscountPrice(request.getDiscountPrice());
+        }
+
+        bundleRepository.save(bundle);
+        return toBundleResponse(bundle);
     }
 
     private BundleResponse toBundleResponse(Bundle bundle) {
@@ -99,5 +123,12 @@ public class BundleServiceImpl implements BundleService {
                 .imageUrl(bundle.getImageUrl())
                 .packages(packageResponses)
                 .build();
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    @Override
+    public void delete(UUID id) {
+        Bundle bundle = bundleRepository.findById(id).orElseThrow(() -> new NotFoundException("Bundle not found"));
+        bundleRepository.delete(bundle);
     }
 }
