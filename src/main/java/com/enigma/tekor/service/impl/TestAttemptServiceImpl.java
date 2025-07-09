@@ -449,6 +449,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                             .questionId(question.getId())
                             .questionText(question.getQuestionText())
                             .questionAudio(question.getAudioUrl())
+                            .questionImage(question.getImageUrl())
                             .options(question.getOptions().stream()
                                     .map(option -> OptionResponse.builder()
                                             .id(option.getId())
