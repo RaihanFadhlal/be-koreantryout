@@ -218,6 +218,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 .status(testAttempt.getStatus())
                 .aiEvaluationResult(testAttempt.getAiEvaluationResult())
                 .createdAt(testAttempt.getCreatedAt())
+                .testPackageName(testAttempt.getTestPackage().getName())
                 .build();
     }
 
@@ -393,6 +394,68 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 .finishTime(attempt.getFinishTime())
                 .questions(questionResponses)
                 .userAnswers(userAnswerResponses)
+                .build();
+    }
+
+    @Override
+    public TestAttemptReviewResponse getTestAttemptReview(String testAttemptId) {
+        TestAttempt attempt = getTestAttemptEntityById(testAttemptId);
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+
+        if (!attempt.getUser().getId().equals(userDetails.getUser().getId())) {
+            throw new AccessForbiddenException("You are not authorized to view this test attempt review");
+        }
+
+        if (!attempt.getStatus().equals(TestAttemptStatus.COMPLETED)) {
+            throw new BadRequestException("Test attempt must be completed to view review.");
+        }
+
+        Map<UUID, UserAnswer> userAnswersMap = attempt.getUserAnswers().stream()
+                .collect(Collectors.toMap(userAnswer -> userAnswer.getQuestion().getId(), userAnswer -> userAnswer));
+
+        List<QuestionReviewResponse> questionReviews = attempt.getTestPackage().getQuestions().stream()
+                .sorted(Comparator.comparing(Question::getNumber))
+                .map(question -> {
+                    UUID correctOptionId = question.getOptions().stream()
+                            .filter(option -> option.getIsCorrect() != null && option.getIsCorrect())
+                            .map(option -> option.getId())
+                            .findFirst()
+                            .orElse(null);
+
+                    UserAnswer userAnswer = userAnswersMap.get(question.getId());
+                    UUID selectedOptionId = null;
+                    Boolean isCorrect = false;
+
+                    if (userAnswer != null && userAnswer.getSelectedOption() != null) {
+                        selectedOptionId = userAnswer.getSelectedOption().getId();
+                        isCorrect = userAnswer.getIsCorrect();
+                    } else {
+                        // If no answer, it's incorrect
+                        isCorrect = false;
+                    }
+
+                    return QuestionReviewResponse.builder()
+                            .questionId(question.getId())
+                            .questionText(question.getQuestionText())
+                            .options(question.getOptions().stream()
+                                    .map(option -> OptionResponse.builder()
+                                            .id(option.getId())
+                                            .optionText(option.getOptionText())
+                                            .build())
+                                    .collect(Collectors.toList()))
+                            .selectedOptionId(selectedOptionId)
+                            .correctOptionId(correctOptionId)
+                            .isCorrect(isCorrect)
+                            .build();
+                })
+                .collect(Collectors.toList());
+
+        return TestAttemptReviewResponse.builder()
+                .testAttemptId(attempt.getId())
+                .testPackageName(attempt.getTestPackage().getName())
+                .questions(questionReviews)
                 .build();
     }
 }

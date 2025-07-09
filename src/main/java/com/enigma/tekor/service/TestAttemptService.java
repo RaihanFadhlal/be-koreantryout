@@ -7,6 +7,7 @@ import com.enigma.tekor.dto.response.SubmitAttemptResponse;
 import com.enigma.tekor.dto.response.TestAttemptDetailResponse;
 import com.enigma.tekor.dto.response.TestAttemptResponse;
 import com.enigma.tekor.dto.response.UserTestAttemptResponse;
+import com.enigma.tekor.dto.response.TestAttemptReviewResponse;
 import com.enigma.tekor.entity.TestAttempt;
 import com.enigma.tekor.entity.Transaction;
 
@@ -21,4 +22,5 @@ public interface TestAttemptService {
     List<TestAttemptResponse> getCompletedTestAttempts();
     Mono<String> getOrTriggerAIEvaluation(String testAttemptId);
     TestAttemptDetailResponse getTestAttemptDetails(String attemptId);
+    TestAttemptReviewResponse getTestAttemptReview(String testAttemptId);
 }
