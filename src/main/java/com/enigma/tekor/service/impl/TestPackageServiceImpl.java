@@ -183,6 +183,7 @@ public TestPackage createTestPackageFromExcel(CreateTestPackageRequest request) 
                         .description(br.getDescription())
                         .imageUrl(br.getImageUrl())
                         .price(br.getPrice())
+                        .discountPrice(br.getDiscountPrice())
                         .type("bundle")
                         .build())
                 .toList();

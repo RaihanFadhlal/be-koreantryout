@@ -129,8 +129,9 @@ public class DataInitializer implements CommandLineRunner {
         BundleRequest bundleRequest = BundleRequest.builder()
                 .name("Paket Hemat A & B")
                 .description("Dapatkan akses ke Paket A dan Paket B dengan harga lebih murah!")
-                .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751525227/Bundle_AB_yq4q8h.jpg")
-                .price(new BigDecimal("150000"))
+                .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751905731/WhatsApp_Image_2025-07-07_at_23.26.23_9094b4da_cbt4ui.jpg")
+                .price(new BigDecimal("200000"))
+                .discountPrice(new BigDecimal("49900"))
                 .packageIds(List.of(packages.get(0).getId(), packages.get(1).getId()))
                 .build();
         bundleService.create(bundleRequest);
