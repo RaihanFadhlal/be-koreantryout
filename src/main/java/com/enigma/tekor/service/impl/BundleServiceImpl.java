@@ -1,23 +1,24 @@
 package com.enigma.tekor.service.impl;
 
-import com.enigma.tekor.exception.BadRequestException;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.context.annotation.Lazy;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.enigma.tekor.dto.request.BundleRequest;
 import com.enigma.tekor.dto.response.BundleResponse;
 import com.enigma.tekor.dto.response.PackageInBundleResponse;
 import com.enigma.tekor.entity.Bundle;
 import com.enigma.tekor.entity.BundlePackage;
 import com.enigma.tekor.entity.TestPackage;
+import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.repository.BundleRepository;
 import com.enigma.tekor.service.BundlePackageService;
 import com.enigma.tekor.service.BundleService;
 import com.enigma.tekor.service.TestPackageService;
-import org.springframework.context.annotation.Lazy;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 public class BundleServiceImpl implements BundleService {
@@ -75,7 +76,7 @@ public class BundleServiceImpl implements BundleService {
     }
 
     @Override
-    public com.enigma.tekor.entity.Bundle getBundleById(UUID id) {
+    public Bundle getBundleById(UUID id) {
         return bundleRepository.findById(id).orElseThrow(() -> new RuntimeException("Bundle not found"));
     }
 
