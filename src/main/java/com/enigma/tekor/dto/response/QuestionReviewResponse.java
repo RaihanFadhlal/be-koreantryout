@@ -16,6 +16,7 @@ public class QuestionReviewResponse {
     private UUID questionId;
     private String questionText;
     private String questionAudio;
+    private String questionImage;
     private List<OptionResponse> options;
     private UUID selectedOptionId;
     private UUID correctOptionId;
