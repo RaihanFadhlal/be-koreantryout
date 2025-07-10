@@ -3,27 +3,17 @@ package com.enigma.tekor.controller;
 import java.util.List;
 import java.util.UUID;
 
+import com.enigma.tekor.dto.response.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.enigma.tekor.dto.request.ChangePasswordRequest;
 import com.enigma.tekor.dto.request.UpdateProfileRequest;
-import com.enigma.tekor.dto.response.CommonResponse;
-import com.enigma.tekor.dto.response.ProfilePictureResponse;
-import com.enigma.tekor.dto.response.ProfileResponse;
-import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.service.UserService;
 import com.enigma.tekor.util.JwtUtil;
 
@@ -112,6 +102,17 @@ public class UserController {
                                 .status("success")
                                 .message("Successfully retrieved all users")
                                 .data(users)
+                                .build());
+        }
+
+        @GetMapping("/{id}")
+        @PreAuthorize("hasRole('ADMIN')")
+        public ResponseEntity<CommonResponse<AdminUserDetailResponse>> getUserById(@PathVariable String id) {
+                AdminUserDetailResponse user = userService.getUserDetailForAdmin(id);
+                return ResponseEntity.ok(CommonResponse.<AdminUserDetailResponse>builder()
+                                .status(HttpStatus.OK.getReasonPhrase())
+                                .message("Successfully retrieved user by id")
+                                .data(user)
                                 .build());
         }
 }
