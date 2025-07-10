@@ -34,11 +34,9 @@ import com.enigma.tekor.service.TestPackageService;
 import com.enigma.tekor.service.TransactionService;
 import com.enigma.tekor.service.UserService;
 import com.midtrans.service.MidtransCoreApi;
-
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 
 @Service
-@RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepository transactionRepository;
@@ -46,10 +44,24 @@ public class TransactionServiceImpl implements TransactionService {
     private final TestPackageService testPackageService;
     private final BundleService bundleService;
     private final MidtransService midtransService;
-
     private final MidtransCoreApi midtransCoreApi;
-
     private static final Logger log = LoggerFactory.getLogger(TransactionServiceImpl.class);
+
+    public TransactionServiceImpl(
+            TransactionRepository transactionRepository,
+            @Lazy UserService userService,
+            TestPackageService testPackageService,
+            BundleService bundleService,
+            MidtransService midtransService,
+            MidtransCoreApi midtransCoreApi
+    ) {
+        this.transactionRepository = transactionRepository;
+        this.userService = userService;
+        this.testPackageService = testPackageService;
+        this.bundleService = bundleService;
+        this.midtransService = midtransService;
+        this.midtransCoreApi = midtransCoreApi;
+    }
 
     @Override
     @Transactional
@@ -245,6 +257,11 @@ public class TransactionServiceImpl implements TransactionService {
         return transactionRepository.findByUserIdAndStatus(
                 userId,
                 TransactionStatus.SUCCESS);
+    }
+
+    @Override
+    public List<Transaction> findAllByUser(User user) {
+        return transactionRepository.findAllByUser(user);
     }
 
 }

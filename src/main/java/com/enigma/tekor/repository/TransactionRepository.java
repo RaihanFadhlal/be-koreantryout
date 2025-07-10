@@ -28,4 +28,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.testPackage LEFT JOIN FETCH t.bundle WHERE t.user = :user AND t.status = :status")
     List<Transaction> findByUserAndStatus(@Param("user") User user, @Param("status") TransactionStatus status);
     List<Transaction> findByUserIdAndStatus(UUID userId, TransactionStatus status);
+    List<Transaction> findAllByUser(User user);
 }

@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.enigma.tekor.dto.response.*;
-import com.enigma.tekor.entity.Question;
+import com.enigma.tekor.entity.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.Authentication;
@@ -21,12 +21,6 @@ import com.enigma.tekor.constant.TransactionStatus;
 import com.enigma.tekor.dto.request.AIEvaluationRequest;
 import com.enigma.tekor.dto.request.SaveAnswerRequest;
 import com.enigma.tekor.dto.request.UserAnswerEvaluationRequest;
-import com.enigma.tekor.entity.BundlePackage;
-import com.enigma.tekor.entity.TestAttempt;
-import com.enigma.tekor.entity.TestPackage;
-import com.enigma.tekor.entity.Transaction;
-import com.enigma.tekor.entity.User;
-import com.enigma.tekor.entity.UserAnswer;
 import com.enigma.tekor.exception.AccessForbiddenException;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.exception.ConflictException;
@@ -309,6 +303,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 TestAttemptStatus.COMPLETED);
 
         return completedAttempts.stream()
+                .sorted(Comparator.comparing(TestAttempt::getCreatedAt).reversed())
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
     }
@@ -420,7 +415,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                 .map(question -> {
                     UUID correctOptionId = question.getOptions().stream()
                             .filter(option -> option.getIsCorrect() != null && option.getIsCorrect())
-                            .map(option -> option.getId())
+                            .map(Option::getId)
                             .findFirst()
                             .orElse(null);
 
@@ -440,7 +435,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
                     if (!isCorrect && correctOptionId != null) {
                         correctAnswerText = question.getOptions().stream()
                                 .filter(option -> option.getId().equals(correctOptionId))
-                                .map(option -> option.getOptionText())
+                                .map(Option::getOptionText)
                                 .findFirst()
                                 .orElse(null);
                     }
@@ -467,6 +462,7 @@ public class TestAttemptServiceImpl implements TestAttemptService {
         return TestAttemptReviewResponse.builder()
                 .testAttemptId(attempt.getId())
                 .testPackageName(attempt.getTestPackage().getName())
+                .finishTime(attempt.getFinishTime())
                 .questions(questionReviews)
                 .build();
     }

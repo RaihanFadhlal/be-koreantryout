@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -15,5 +16,6 @@ import java.util.UUID;
 public class TestAttemptReviewResponse {
     private UUID testAttemptId;
     private String testPackageName;
+    private LocalDateTime finishTime;
     private List<QuestionReviewResponse> questions;
 }

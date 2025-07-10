@@ -8,6 +8,7 @@ import com.enigma.tekor.dto.request.TransactionRequest;
 import com.enigma.tekor.dto.response.TransactionDetailResponse;
 import com.enigma.tekor.dto.response.TransactionResponse;
 import com.enigma.tekor.entity.Transaction;
+import com.enigma.tekor.entity.User;
 
 public interface TransactionService {
     TransactionResponse create(TransactionRequest request);
@@ -17,4 +18,5 @@ public interface TransactionService {
     List<TransactionResponse> getHistory();
     List<TransactionDetailResponse> getTransactionsByUserId(String userId);
     List<Transaction> getSuccessfulTransactionsByUserId(UUID userId);
+    List<Transaction> findAllByUser(User user);
 }

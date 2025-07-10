@@ -2,6 +2,7 @@ package com.enigma.tekor.service;
 import java.util.List;
 import java.util.UUID;
 
+import com.enigma.tekor.dto.response.AdminUserDetailResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.enigma.tekor.dto.request.ChangePasswordRequest;
@@ -23,4 +24,5 @@ public interface UserService {
     User findById(UUID id);
     User update(User user);
     List<UserResponse> getAllUsers();
+    AdminUserDetailResponse getUserDetailForAdmin(String id);
 }
