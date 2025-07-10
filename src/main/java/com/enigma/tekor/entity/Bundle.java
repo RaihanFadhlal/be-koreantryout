@@ -17,6 +17,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 @Setter
 @Getter
@@ -24,6 +26,8 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(name = "bundles")
+@SQLDelete(sql = "UPDATE bundles SET is_deleted = true WHERE id = ?")
+@Where(clause = "is_deleted = false")
 public class Bundle {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -42,6 +46,9 @@ public class Bundle {
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
+
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
 
     @OneToMany(mappedBy = "bundle", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BundlePackage> bundlePackages;
