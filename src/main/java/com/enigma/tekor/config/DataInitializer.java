@@ -13,9 +13,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.enigma.tekor.constant.TransactionStatus;
+import com.enigma.tekor.dto.request.BundleRequest;
 import com.enigma.tekor.dto.request.CreateTestPackageRequest;
 import com.enigma.tekor.dto.request.VocabularyRequest;
-import com.enigma.tekor.dto.request.BundleRequest;
 import com.enigma.tekor.entity.Role;
 import com.enigma.tekor.entity.TestPackage;
 import com.enigma.tekor.entity.Transaction;
@@ -71,6 +71,17 @@ public class DataInitializer implements CommandLineRunner {
             user.setRole(userRole);
             user.setIsVerified(true);
             userRepository.save(user);
+        }
+
+        User pallad = userRepository.findByEmail("palladistheking@gmail.com").orElseGet(User::new);
+        if (pallad.getId() == null) {
+            pallad.setFullName("Pallad");
+            pallad.setUsername("pallad");
+            pallad.setEmail("palladistheking@gmail.com");
+            pallad.setPassword(passwordEncoder.encode("IkanHiuMakanKodok"));
+            pallad.setRole(userRole);
+            pallad.setIsVerified(true);
+            userRepository.save(pallad);
         }
 
         if (testPackageRepository.count() == 0) {

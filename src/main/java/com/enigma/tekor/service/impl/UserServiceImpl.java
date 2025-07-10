@@ -6,14 +6,18 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.enigma.tekor.service.TransactionService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.enigma.tekor.dto.request.ChangePasswordRequest;
+import com.enigma.tekor.dto.request.SearchUserRequest;
 import com.enigma.tekor.dto.request.UpdateProfileRequest;
 import com.enigma.tekor.dto.response.AdminUserDetailResponse;
 import com.enigma.tekor.dto.response.ProfilePictureResponse;
@@ -27,7 +31,9 @@ import com.enigma.tekor.exception.InvalidFileException;
 import com.enigma.tekor.exception.UserNotFoundException;
 import com.enigma.tekor.repository.UserRepository;
 import com.enigma.tekor.service.CloudinaryService;
+import com.enigma.tekor.service.TransactionService;
 import com.enigma.tekor.service.UserService;
+import com.enigma.tekor.specification.UserSpecification;
 
 @Service
 public class UserServiceImpl implements UserService {
@@ -174,14 +180,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponse> getAllUsers() {
-    return userRepository.findAll().stream()
-            .map(user -> UserResponse.builder()
-                    .id(user.getId())  
-                    .username(user.getUsername())
-                    .email(user.getEmail())
-                    .build())
-            .toList();
+    public Page<UserResponse> getAllUsers(SearchUserRequest request) {
+        if (request.getPage() <= 0) request.setPage(1);
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize());
+        Specification<User> specification = UserSpecification.getSpecification(request);
+        Page<User> users = userRepository.findAll(specification, pageable);
+        return users.map(user -> UserResponse.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .build());
     }
 
     @Override
