@@ -16,8 +16,10 @@ import com.enigma.tekor.entity.Bundle;
 import com.enigma.tekor.entity.BundlePackage;
 import com.enigma.tekor.entity.TestPackage;
 import com.enigma.tekor.exception.BadRequestException;
+import com.enigma.tekor.exception.ConflictException;
 import com.enigma.tekor.exception.NotFoundException;
 import com.enigma.tekor.repository.BundleRepository;
+import com.enigma.tekor.repository.TransactionRepository;
 import com.enigma.tekor.service.BundlePackageService;
 import com.enigma.tekor.service.BundleService;
 import com.enigma.tekor.service.TestPackageService;
@@ -28,15 +30,18 @@ public class BundleServiceImpl implements BundleService {
     private final BundleRepository bundleRepository;
     private final TestPackageService testPackageService;
     private final BundlePackageService bundlePackageService;
+    private final TransactionRepository transactionRepository;
 
     public BundleServiceImpl(
             BundleRepository bundleRepository,
             @Lazy TestPackageService testPackageService,
-            BundlePackageService bundlePackageService
+            BundlePackageService bundlePackageService,
+            TransactionRepository transactionRepository
     ) {
         this.bundleRepository = bundleRepository;
         this.testPackageService = testPackageService;
         this.bundlePackageService = bundlePackageService;
+        this.transactionRepository = transactionRepository;
     }
 
     @Transactional(rollbackFor = Exception.class)
