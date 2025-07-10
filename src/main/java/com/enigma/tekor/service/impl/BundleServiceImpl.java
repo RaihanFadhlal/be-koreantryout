@@ -134,9 +134,6 @@ public class BundleServiceImpl implements BundleService {
     @Override
     public void delete(UUID id) {
         Bundle bundle = bundleRepository.findById(id).orElseThrow(() -> new NotFoundException("Bundle not found"));
-        if (transactionRepository.existsByBundle_Id(id)) {
-            throw new ConflictException("Cannot delete bundle because it has associated transactions");
-        }
         bundleRepository.delete(bundle);
     }
 }
