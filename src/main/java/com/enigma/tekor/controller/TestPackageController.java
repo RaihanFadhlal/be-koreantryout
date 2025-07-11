@@ -33,8 +33,8 @@ public class TestPackageController {
     }
 
     @PreAuthorize("hasRole('ADMIN')")
-    @PutMapping(path = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<CommonResponse<TestPackageResponse>> updateTestPackage(@PathVariable String id, @RequestBody UpdateTestPackageRequest request) {
+    @PutMapping(path = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<CommonResponse<TestPackageResponse>> updateTestPackage(@PathVariable String id, @ModelAttribute UpdateTestPackageRequest request) {
         TestPackageResponse updated = testPackageService.update(id, request);
         return ResponseEntity.ok(CommonResponse.<TestPackageResponse>builder()
                 .status(HttpStatus.OK.getReasonPhrase())
