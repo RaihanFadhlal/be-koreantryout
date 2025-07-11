@@ -1,0 +1,97 @@
+# Comments are provided throughout this file to help you get started.
+# If you need more help, visit the Docker Compose reference guide at
+# https://docs.docker.com/go/compose-spec-reference/
+
+# Here the instructions define your application as a service called "server".
+# This service is built from the Dockerfile in the current directory.
+# You can add other services your application may depend on here, such as a
+# database or a cache. For examples, see the Awesome Compose repository:
+# https://github.com/docker/awesome-compose
+networks:
+  tekor-network:
+    driver: bridge
+
+services:
+  database:
+    image: postgres:15
+    container_name: tekor-postgres
+    networks:
+      - tekor-network
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: tekor_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - tekor_postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: 
+      context: .
+    image: raaflahar/tekor-app:latest
+    container_name: tekor-app
+    networks:
+      - tekor-network
+    depends_on:
+      - database
+    environment:
+      DB_URL: jdbc:postgresql://database:5432/tekor_db
+      DB_USERNAME: postgres
+      DB_PASSWORD: root
+
+      JWT_SECRET: DHAZvpPnWWTi+cnpbw7GaH7L/fqr11sCQjs1+3nEJr4=
+
+      JWT_EXPIRATION_ACCESS_TOKEN: 36000
+
+
+      JWT_EXPIRATION_REFRESH_TOKEN: 604800
+
+      MIDTRANS_SERVER_KEY: SB-Mid-server-Rz6T1c2kTPzslf1SagLa-XDm
+      MIDTRANS_CLIENT_KEY: SB-Mid-client-oo1ZVCucdn1-cztk
+
+      EMAIL_SECRET_KEY: gtfpypnjardsynrl
+
+      CLOUDINARY_CLOUD_NAME: de7fcoe98
+      CLOUDINARY_API_KEY: 629666751621562
+      CLOUDINARY_API_SECRET: qaEHpQOy6uwSoYvjt96EKrh8Q1E
+
+      GOOGLE_API_KEY: AIzaSyBi1bV-V1uNDnJD_z6aLWPB5UZjwHnr7lE
+    ports:
+      - "8081:8081"
+
+volumes:
+  tekor_postgres_data:
+# The commented out section below is an example of how to define a PostgreSQL
+# database that your application can use. `depends_on` tells Docker Compose to
+# start the database before your application. The `db-data` volume persists the
+# database data between container restarts. The `db-password` secret is used
+# to set the database password. You must create `db/password.txt` and add
+# a password of your choosing to it before running `docker-compose up`.
+#     depends_on:
+#       db:
+#         condition: service_healthy
+#   db:
+#     image: postgres
+#     restart: always
+#     user: postgres
+#     secrets:
+#       - db-password
+#     volumes:
+#       - db-data:/var/lib/postgresql/data
+#     environment:
+#       - POSTGRES_DB=example
+#       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+#     expose:
+#       - 5432
+#     healthcheck:
+#       test: [ "CMD", "pg_isready" ]
+#       interval: 10s
+#       timeout: 5s
+#       retries: 5
+# volumes:
+#   db-data:
+# secrets:
+#   db-password:
+#     file: db/password.txt
+

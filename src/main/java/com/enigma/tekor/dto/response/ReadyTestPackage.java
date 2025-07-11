@@ -1,9 +1,6 @@
 package com.enigma.tekor.dto.response;
 
-import java.util.Date;
-
-
-
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Data;
 
@@ -13,6 +10,6 @@ public class ReadyTestPackage {
 
     private String transactionId;
     private TestPackageResponse testPackage;  
-    private Date purchaseDate;
+    private LocalDateTime purchaseDate;
     
 }

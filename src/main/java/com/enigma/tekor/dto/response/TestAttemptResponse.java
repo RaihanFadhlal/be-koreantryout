@@ -1,8 +1,6 @@
 package com.enigma.tekor.dto.response;
 
-
-
-import java.util.Date;
+import java.time.LocalDateTime;
 
 import com.enigma.tekor.constant.TestAttemptStatus;
 
@@ -22,10 +20,12 @@ public class TestAttemptResponse {
     private String userId;
     private String packageId;
     private String transactionId;
-    private Date startTime;
-    private Date endTime;
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
+    private LocalDateTime finishTime;
     private Float score;
     private TestAttemptStatus status;
     private String aiEvaluationResult;
-    private Date createdAt;
+    private LocalDateTime createdAt;
+    private String testPackageName;
 }

@@ -70,7 +70,6 @@ public class TransactionController {
     public ResponseEntity<CommonResponse<List<TransactionDetailResponse>>> getTransactionsByUserId(
             @PathVariable String userId) {
         List<TransactionDetailResponse> transactions = transactionService.getTransactionsByUserId(userId);
-        
         return ResponseEntity.status(HttpStatus.OK)
                 .body(CommonResponse.<List<TransactionDetailResponse>>builder()
                         .status(String.valueOf(HttpStatus.OK.value()))

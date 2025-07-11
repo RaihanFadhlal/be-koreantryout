@@ -4,37 +4,54 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.enigma.tekor.dto.request.ChangePasswordRequest;
+import com.enigma.tekor.dto.request.SearchUserRequest;
 import com.enigma.tekor.dto.request.UpdateProfileRequest;
+import com.enigma.tekor.dto.response.AdminUserDetailResponse;
 import com.enigma.tekor.dto.response.ProfilePictureResponse;
 import com.enigma.tekor.dto.response.ProfileResponse;
+import com.enigma.tekor.dto.response.TransactionSummaryResponse;
 import com.enigma.tekor.dto.response.UserResponse;
+import com.enigma.tekor.entity.Transaction;
 import com.enigma.tekor.entity.User;
 import com.enigma.tekor.exception.BadRequestException;
 import com.enigma.tekor.exception.InvalidFileException;
 import com.enigma.tekor.exception.UserNotFoundException;
 import com.enigma.tekor.repository.UserRepository;
 import com.enigma.tekor.service.CloudinaryService;
+import com.enigma.tekor.service.TransactionService;
 import com.enigma.tekor.service.UserService;
-
-import lombok.RequiredArgsConstructor;
+import com.enigma.tekor.specification.UserSpecification;
 
 @Service
-@RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final CloudinaryService cloudinaryService;
+    private final TransactionService transactionService;
 
     @Value("${file.upload-dir}")
     private String uploadDir;
+
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, CloudinaryService cloudinaryService, @Lazy TransactionService transactionService) {
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.cloudinaryService = cloudinaryService;
+        this.transactionService = transactionService;
+    }
 
     @Override
     public ProfileResponse getProfileById(UUID userId) {
@@ -163,13 +180,54 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<UserResponse> getAllUsers() {
-    return userRepository.findAll().stream()
-            .map(user -> UserResponse.builder()
-                    .id(user.getId())  
-                    .username(user.getUsername())
-                    .email(user.getEmail())
-                    .build())
-            .toList();
+    public Page<UserResponse> getAllUsers(SearchUserRequest request) {
+        if (request.getPage() <= 0) request.setPage(1);
+        Pageable pageable = PageRequest.of(request.getPage() - 1, request.getSize());
+        Specification<User> specification = UserSpecification.getSpecification(request);
+        Page<User> users = userRepository.findAll(specification, pageable);
+        return users.map(user -> UserResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .build());
+    }
+
+    @Override
+    public AdminUserDetailResponse getUserDetailForAdmin(String id) {
+        User user = findById(UUID.fromString(id));
+        List<Transaction> transactions = transactionService.findAllByUser(user);
+
+        List<TransactionSummaryResponse> transactionSummaries = transactions.stream()
+                .map(this::mapToTransactionSummary)
+                .collect(Collectors.toList());
+
+        return AdminUserDetailResponse.builder()
+                .id(user.getId())
+                .fullName(user.getFullName())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .imageUrl(user.getImageUrl())
+                .isVerified(user.getIsVerified())
+                .createdAt(user.getCreatedAt().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
+                .transactions(transactionSummaries)
+                .build();
+    }
+
+    private TransactionSummaryResponse mapToTransactionSummary(Transaction transaction) {
+        String itemName = "Item not found";
+        if (transaction.getTestPackage() != null) {
+            itemName = transaction.getTestPackage().getName();
+        } else if (transaction.getBundle() != null) {
+            itemName = transaction.getBundle().getName();
+        }
+
+        return TransactionSummaryResponse.builder()
+                .transactionId(transaction.getId().toString())
+                .status(transaction.getStatus())
+                .amount(transaction.getAmount())
+                .purchasedItemName(itemName)
+                .transactionDate(transaction.getCreatedAt())
+                .build();
     }
 }

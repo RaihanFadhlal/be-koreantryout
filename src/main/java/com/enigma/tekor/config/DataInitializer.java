@@ -13,16 +13,19 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.enigma.tekor.constant.TransactionStatus;
+import com.enigma.tekor.dto.request.BundleRequest;
 import com.enigma.tekor.dto.request.CreateTestPackageRequest;
 import com.enigma.tekor.dto.request.VocabularyRequest;
 import com.enigma.tekor.entity.Role;
 import com.enigma.tekor.entity.TestPackage;
 import com.enigma.tekor.entity.Transaction;
 import com.enigma.tekor.entity.User;
+import com.enigma.tekor.repository.BundleRepository;
 import com.enigma.tekor.repository.TestPackageRepository;
 import com.enigma.tekor.repository.TransactionRepository;
 import com.enigma.tekor.repository.UserRepository;
 import com.enigma.tekor.repository.VocabularyRepository;
+import com.enigma.tekor.service.BundleService;
 import com.enigma.tekor.service.RoleService;
 import com.enigma.tekor.service.TestPackageService;
 import com.enigma.tekor.service.VocabularyService;
@@ -40,6 +43,8 @@ public class DataInitializer implements CommandLineRunner {
     private final TransactionRepository transactionRepository;
     private final VocabularyRepository vocabularyRepository;
     private final VocabularyService vocabularyService;
+    private final BundleService bundleService;
+    private final BundleRepository bundleRepository;
 
     @Override
     public void run(String... args) throws Exception {
@@ -68,8 +73,22 @@ public class DataInitializer implements CommandLineRunner {
             userRepository.save(user);
         }
 
+        User pallad = userRepository.findByEmail("palladistheking@gmail.com").orElseGet(User::new);
+        if (pallad.getId() == null) {
+            pallad.setFullName("Pallad");
+            pallad.setUsername("pallad");
+            pallad.setEmail("palladistheking@gmail.com");
+            pallad.setPassword(passwordEncoder.encode("IkanHiuMakanKodok"));
+            pallad.setRole(userRole);
+            pallad.setIsVerified(true);
+            userRepository.save(pallad);
+        }
+
         if (testPackageRepository.count() == 0) {
-            createDummyTestPackage();
+            List<TestPackage> packages = createDummyTestPackage();
+            if (bundleRepository.count() == 0 && packages.size() >= 2) {
+                createDummyBundle(packages);
+            }
         }
 
         if (transactionRepository.count() == 0) {
@@ -81,9 +100,9 @@ public class DataInitializer implements CommandLineRunner {
         }
     }
 
-    private void createDummyTestPackage() {
+    private List<TestPackage> createDummyTestPackage() {
         try {
-            ClassPathResource resource = new ClassPathResource("Dummy Package.xlsx");
+            ClassPathResource resource = new ClassPathResource("Question-Tekor.xlsx");
             MultipartFile multipartFile = new MockMultipartFile(
                     "file",
                     resource.getFilename(),
@@ -92,18 +111,41 @@ public class DataInitializer implements CommandLineRunner {
             );
 
             CreateTestPackageRequest request = CreateTestPackageRequest.builder()
-                    .name("Dummy Test Package")
-                    .description("This is a dummy test package created from an Excel file.")
+                    .name("Paket Test A")
+                    .description("Paket A try out tes bahasa korea berisi 20 soal Reading dan 20 soal Listening")
                     .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751525227/A_c3jx1r.jpg")
                     .price(new BigDecimal("100000"))
-                    .discountPrice(new BigDecimal("80000"))
+                    .discountPrice(new BigDecimal("29900"))
                     .file(multipartFile)
                     .build();
 
-            testPackageService.createTestPackageFromExcel(request);
+            CreateTestPackageRequest requestB = CreateTestPackageRequest.builder()
+                    .name("Paket Test B")
+                    .description("Paket B try out tes bahasa korea berisi 20 soal Reading dan 20 soal Listening")
+                    .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751525227/B_z8vwmp.jpg")
+                    .price(new BigDecimal("100000"))
+                    .discountPrice(new BigDecimal("29900"))
+                    .file(multipartFile)
+                    .build();
+
+            TestPackage packageA = testPackageService.createTestPackageFromExcel(request);
+            TestPackage packageB = testPackageService.createTestPackageFromExcel(requestB);
+            return List.of(packageA, packageB);
         } catch (IOException e) {
             throw new RuntimeException("Failed to load dummy package", e);
         }
+    }
+
+    private void createDummyBundle(List<TestPackage> packages) {
+        BundleRequest bundleRequest = BundleRequest.builder()
+                .name("Paket Hemat A & B")
+                .description("Dapatkan akses ke Paket A dan Paket B dengan harga lebih murah!")
+                .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751905731/WhatsApp_Image_2025-07-07_at_23.26.23_9094b4da_cbt4ui.jpg")
+                .price(new BigDecimal("200000"))
+                .discountPrice(new BigDecimal("49900"))
+                .packageIds(List.of(packages.get(0).getId(), packages.get(1).getId()))
+                .build();
+        bundleService.create(bundleRequest);
     }
 
     private void createDummyTransaction(User user) {
@@ -122,7 +164,7 @@ public class DataInitializer implements CommandLineRunner {
 
     private void createDummyVocabulary() {
         try {
-            ClassPathResource resource = new ClassPathResource("DummyVocabularies.xlsx");
+            ClassPathResource resource = new ClassPathResource("Vocabularies.xlsx");
             MockMultipartFile multipartFile = new MockMultipartFile(
                     "file",
                     resource.getFilename(),

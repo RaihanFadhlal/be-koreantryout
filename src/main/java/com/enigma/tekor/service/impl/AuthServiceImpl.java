@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
-import com.enigma.tekor.entity.EmailVerificationToken;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -25,6 +24,7 @@ import com.enigma.tekor.dto.response.LoginResponse;
 import com.enigma.tekor.dto.response.TokenResponse;
 import com.enigma.tekor.dto.response.UserLoginInfo;
 import com.enigma.tekor.dto.response.UserResponse;
+import com.enigma.tekor.entity.EmailVerificationToken;
 import com.enigma.tekor.entity.PasswordResetToken;
 import com.enigma.tekor.entity.Role;
 import com.enigma.tekor.entity.User;
@@ -161,7 +161,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         user.setIsVerified(true);
-        userService.update(user);
         emailVerificationTokenRepository.delete(verificationToken);
     }
 
@@ -222,5 +221,11 @@ public class AuthServiceImpl implements AuthService {
         userService.update(user);
 
         passwordResetTokenRepository.delete(token);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void verifyEmailFromMobile(String token) {
+        verifyEmail(token);
     }
 }

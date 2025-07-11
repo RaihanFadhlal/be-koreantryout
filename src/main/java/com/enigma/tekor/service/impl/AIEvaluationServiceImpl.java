@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.enigma.tekor.entity.TestAttempt;
-import com.enigma.tekor.entity.UserAnswer;
+import com.enigma.tekor.dto.request.AIEvaluationRequest;
+import com.enigma.tekor.dto.request.UserAnswerEvaluationRequest;
 import com.enigma.tekor.service.AIEvaluationService;
 import com.google.genai.Client;
 import com.google.genai.types.GenerateContentResponse;
@@ -55,9 +55,9 @@ public class AIEvaluationServiceImpl implements AIEvaluationService {
     }
 
     @Override
-    public Mono<String> getEvaluation(TestAttempt testAttempt) {
-        String promptText = buildPrompt(testAttempt);
-        log.info("Sending evaluation prompt for TestAttempt ID: {}", testAttempt.getId());
+    public Mono<String> getEvaluation(AIEvaluationRequest request) {
+        String promptText = buildPrompt(request);
+        log.info("Sending evaluation prompt for TestAttempt ID: {}", request.getTestAttemptId());
 
         return Mono.fromCallable(() -> {
             log.debug("Executing blocking call to Gemini API on a dedicated thread.");
@@ -66,18 +66,17 @@ public class AIEvaluationServiceImpl implements AIEvaluationService {
         })
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnError(error -> log.error("Error in reactive chain for Gemini call for TestAttempt ID: {}",
-                        testAttempt.getId(), error))
+                        request.getTestAttemptId(), error))
                 .onErrorReturn(GENERIC_ERROR_MESSAGE);
     }
 
-    private String buildPrompt(TestAttempt testAttempt) {
-        Map<String, List<UserAnswer>> answersByQuestionType = testAttempt.getUserAnswers().stream()
-                .filter(answer -> answer.getQuestion() != null)
-                .collect(Collectors.groupingBy(answer -> answer.getQuestion().getQuestionType().name()));
+    private String buildPrompt(AIEvaluationRequest request) {
+        Map<String, List<UserAnswerEvaluationRequest>> answersByQuestionType = request.getUserAnswers().stream()
+                .collect(Collectors.groupingBy(UserAnswerEvaluationRequest::getQuestionType));
 
         StringBuilder details = new StringBuilder();
         answersByQuestionType.forEach((questionType, answers) -> {
-            long correctCount = answers.stream().filter(UserAnswer::getIsCorrect).count();
+            long correctCount = answers.stream().filter(UserAnswerEvaluationRequest::getIsCorrect).count();
             long incorrectCount = answers.size() - correctCount;
             details.append(String.format("""
 
@@ -93,7 +92,7 @@ public class AIEvaluationServiceImpl implements AIEvaluationService {
 
                 KONTEKS UJIAN:
                 - Seorang peserta ujian baru saja menyelesaikan simulasi ujian EPS-TOPIK
-                - Hasil ujian: Skor Total %d dari 100 poin
+                - Hasil ujian: Skor Total %.0f dari 100 poin
                 - Detail per kategori: %s
 
                 TUGAS ANDA:
@@ -142,6 +141,6 @@ public class AIEvaluationServiceImpl implements AIEvaluationService {
 
                 TONE: Seperti mentor yang berpengalaman, supportif namun jujur, dan percaya pada potensi siswa untuk berkembang.
                                 """
-                .formatted(testAttempt.getScore(), details.toString());
+                .formatted(request.getScore(), details.toString());
     }
 }

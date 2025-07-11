@@ -1,6 +1,6 @@
 package com.enigma.tekor.entity;
 
-import java.util.Date;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,7 +19,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -47,15 +46,14 @@ public class TestAttempt {
     @JoinColumn(name = "package_id", nullable = false)
     private TestPackage testPackage;
 
-    @OneToOne
-    @JoinColumn(name = "transaction_id", nullable = false, unique = true)
-    private Transaction transaction;
-
     @Column(name = "start_time")
-    private Date startTime;
+    private LocalDateTime startTime;
 
     @Column(name = "end_time")
-    private Date endTime;
+    private LocalDateTime endTime;
+
+    @Column(name = "finish_time")
+    private LocalDateTime finishTime;
 
     @Column(name = "score")
     private Float score;
@@ -67,18 +65,13 @@ public class TestAttempt {
     @Column(name = "ai_evaluation_result", columnDefinition = "TEXT")
     private String aiEvaluationResult;
 
-    @Column(name = "remaining_duration")
-    private Long remainingDuration;
-
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private Date createdAt;
+    private LocalDateTime createdAt;
 
     @OneToMany(mappedBy = "testAttempt", cascade = CascadeType.ALL)
     private List<UserAnswer> userAnswers;
 
     @OneToMany(mappedBy = "testAttempt", cascade = CascadeType.ALL)
     private List<TestEvent> testEvents;
-
-   
 }

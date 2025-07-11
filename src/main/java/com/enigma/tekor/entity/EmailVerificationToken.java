@@ -22,10 +22,10 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Builder
 @Entity
-@Table(name = "m_email_verification_token")
+@Table(name = "email_verification_token")
 public class EmailVerificationToken {
 
-    private static final long EXPIRATION_MINUTES = 60 * 24; // 24 hours
+    private static final long EXPIRATION_MINUTES = 60 * 24;
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

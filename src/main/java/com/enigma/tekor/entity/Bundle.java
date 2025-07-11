@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -16,6 +17,8 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.Where;
 
 @Setter
 @Getter
@@ -23,11 +26,12 @@ import lombok.Setter;
 @AllArgsConstructor
 @Entity
 @Table(name = "bundles")
+@SQLDelete(sql = "UPDATE bundles SET is_deleted = true WHERE id = ?")
+@Where(clause = "is_deleted = false")
 public class Bundle {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
-
     private String name;
 
     @Column(columnDefinition = "TEXT")
@@ -35,10 +39,18 @@ public class Bundle {
 
     private BigDecimal price;
 
+    private BigDecimal discountPrice;
+
+    @Column(name = "image_url")
+    private String imageUrl = null;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();
 
-    @OneToMany(mappedBy = "bundle")
+    @Column(name = "is_deleted")
+    private Boolean isDeleted = false;
+
+    @OneToMany(mappedBy = "bundle", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BundlePackage> bundlePackages;
-    
+
 }

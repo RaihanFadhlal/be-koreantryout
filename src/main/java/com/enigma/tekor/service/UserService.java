@@ -2,6 +2,9 @@ package com.enigma.tekor.service;
 import java.util.List;
 import java.util.UUID;
 
+import com.enigma.tekor.dto.request.SearchUserRequest;
+import com.enigma.tekor.dto.response.AdminUserDetailResponse;
+import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.enigma.tekor.dto.request.ChangePasswordRequest;
@@ -21,8 +24,7 @@ public interface UserService {
     User findByUsername(String username);
     User save(User user);
     User findById(UUID id);
-
     User update(User user);
-
-    List<UserResponse> getAllUsers();
+    Page<UserResponse> getAllUsers(SearchUserRequest request);
+    AdminUserDetailResponse getUserDetailForAdmin(String id);
 }

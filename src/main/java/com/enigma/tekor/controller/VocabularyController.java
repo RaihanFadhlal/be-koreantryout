@@ -3,6 +3,7 @@ package com.enigma.tekor.controller;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -57,13 +58,17 @@ public class VocabularyController {
     }
 
     @GetMapping
-    public ResponseEntity<CommonResponse<?>> getVocabularies(@RequestParam String category) {
+    public ResponseEntity<CommonResponse<?>> getVocabularies(
+            @RequestParam String category,
+            @RequestParam(defaultValue = "0") Integer page,
+            @RequestParam(defaultValue = "10") Integer size
+    ) {
     try {
         VocabularyCategories categoryEnum = VocabularyCategories.valueOf(category.toUpperCase());
-        List<Vocabulary> vocabularies = vocabularyService.getVocabulariesByCategory(categoryEnum);
+        Page<Vocabulary> vocabularies = vocabularyService.getVocabulariesByCategory(categoryEnum, page, size);
 
         return ResponseEntity.ok(
-                CommonResponse.<List<Vocabulary>>builder()
+                CommonResponse.<Page<Vocabulary>>builder()
                         .status(HttpStatus.OK.name())
                         .message("Vocabularies retrieved successfully for category: " + category)
                         .data(vocabularies)

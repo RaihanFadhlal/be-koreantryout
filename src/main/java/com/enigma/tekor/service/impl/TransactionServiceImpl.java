@@ -6,7 +6,6 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -34,13 +33,10 @@ import com.enigma.tekor.service.MidtransService;
 import com.enigma.tekor.service.TestPackageService;
 import com.enigma.tekor.service.TransactionService;
 import com.enigma.tekor.service.UserService;
-import com.midtrans.httpclient.error.MidtransError;
 import com.midtrans.service.MidtransCoreApi;
-
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 
 @Service
-@RequiredArgsConstructor
 public class TransactionServiceImpl implements TransactionService {
 
     private final TransactionRepository transactionRepository;
@@ -48,10 +44,24 @@ public class TransactionServiceImpl implements TransactionService {
     private final TestPackageService testPackageService;
     private final BundleService bundleService;
     private final MidtransService midtransService;
-
     private final MidtransCoreApi midtransCoreApi;
-
     private static final Logger log = LoggerFactory.getLogger(TransactionServiceImpl.class);
+
+    public TransactionServiceImpl(
+            TransactionRepository transactionRepository,
+            @Lazy UserService userService,
+            TestPackageService testPackageService,
+            BundleService bundleService,
+            MidtransService midtransService,
+            MidtransCoreApi midtransCoreApi
+    ) {
+        this.transactionRepository = transactionRepository;
+        this.userService = userService;
+        this.testPackageService = testPackageService;
+        this.bundleService = bundleService;
+        this.midtransService = midtransService;
+        this.midtransCoreApi = midtransCoreApi;
+    }
 
     @Override
     @Transactional
@@ -73,11 +83,19 @@ public class TransactionServiceImpl implements TransactionService {
         if (request.getBundleId() != null) {
             Bundle bundle = bundleService.getBundleById(request.getBundleId());
             transaction.setBundle(bundle);
-            transaction.setAmount(bundle.getPrice());
+            if (bundle.getDiscountPrice() == null) {
+                transaction.setAmount(bundle.getPrice());
+            } else {
+                transaction.setAmount(bundle.getDiscountPrice());
+            }
         } else {
             TestPackage testPackage = testPackageService.getOneById(request.getTestPackageId());
             transaction.setTestPackage(testPackage);
-            transaction.setAmount(testPackage.getPrice());
+            if (testPackage.getDiscountPrice() == null) {
+                transaction.setAmount(testPackage.getPrice());
+            } else {
+                transaction.setAmount(testPackage.getDiscountPrice());
+            }
         }
 
         transactionRepository.save(transaction);
@@ -87,11 +105,7 @@ public class TransactionServiceImpl implements TransactionService {
         try {
             CreateTransactionResponse midtransResponse = midtransService.createTransaction(transaction);
 
-            return TransactionResponse.builder()
-                    .orderId(transaction.getMidtransOrderId())
-                    .redirectUrl(midtransResponse.getRedirectUrl())
-                    .transactionStatus(transaction.getStatus().name())
-                    .build();
+            return toTransactionResponse(transaction, midtransResponse.getRedirectUrl());
         } catch (Exception e) {
             throw new RuntimeException("Failed to create Midtrans transaction", e);
         }
@@ -102,6 +116,7 @@ public class TransactionServiceImpl implements TransactionService {
     public void handleMidtransNotification(Map<String, Object> payload) {
         String orderId = (String) payload.get("order_id");
         log.info("Received Midtrans notification for order_id: {}", orderId);
+        log.info("Payload", payload);
 
         Transaction transaction = transactionRepository.findByMidtransOrderId(orderId)
                 .orElseThrow(() -> {
@@ -110,41 +125,28 @@ public class TransactionServiceImpl implements TransactionService {
                             "Transaction with order ID " + orderId + " not found.");
                 });
 
-        try {
-            JSONObject transactionResult = midtransCoreApi.checkTransaction(orderId);
-            log.info("Verified status for order_id {}: {}", orderId, transactionResult.toString());
+        String transactionStatus = (String) payload.get("transaction_status");
+        String fraudStatus = (String) payload.get("fraud_status");
 
-            String transactionStatus = transactionResult.getString("transaction_status");
-            String fraudStatus = transactionResult.optString("fraud_status");
-
-            if (transactionStatus.equals("capture")) {
-                if (fraudStatus.equals("accept")) {
-
-                    transaction.setStatus(TransactionStatus.SUCCESS);
-                } else if (fraudStatus.equals("challenge")) {
-                    transaction.setStatus(TransactionStatus.PENDING);
-                } else {
-                    transaction.setStatus(TransactionStatus.FAILED);
-                }
-            } else if (transactionStatus.equals("settlement")) {
+        if ("capture".equals(transactionStatus)) {
+            if ("accept".equals(fraudStatus)) {
                 transaction.setStatus(TransactionStatus.SUCCESS);
-            } else if (transactionStatus.equals("cancel") || transactionStatus.equals("deny")
-                    || transactionStatus.equals("expire")) {
-                transaction.setStatus(TransactionStatus.FAILED);
-            } else if (transactionStatus.equals("pending")) {
+            } else if ("challenge".equals(fraudStatus)) {
                 transaction.setStatus(TransactionStatus.PENDING);
+            } else {
+                transaction.setStatus(TransactionStatus.FAILED);
             }
-
-            transactionRepository.save(transaction);
-            log.info("Successfully updated transaction status for order_id: {} to {}", orderId,
-                    transaction.getStatus());
-
-        } catch (MidtransError e) {
-            log.error("Failed to verify transaction status from Midtrans for order_id: " + orderId
-                    + ". Error: " + e.getMessage());
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to verify status with Midtrans");
+        } else if ("settlement".equals(transactionStatus)) {
+            transaction.setStatus(TransactionStatus.SUCCESS);
+        } else if ("cancel".equals(transactionStatus) || "deny".equals(transactionStatus) || "expire".equals(transactionStatus)) {
+            transaction.setStatus(TransactionStatus.FAILED);
+        } else if ("pending".equals(transactionStatus)) {
+            transaction.setStatus(TransactionStatus.PENDING);
         }
+
+        transactionRepository.save(transaction);
+        log.info("Successfully updated transaction status for order_id: {} to {}", orderId,
+                transaction.getStatus());
     }
 
     @Override
@@ -153,11 +155,7 @@ public class TransactionServiceImpl implements TransactionService {
         Transaction transaction = transactionRepository.findByMidtransOrderId(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction not found"));
 
-        return TransactionResponse.builder()
-                .orderId(transaction.getMidtransOrderId())
-                .transactionStatus(transaction.getStatus().name())
-                .redirectUrl(getRedirectUrlBasedOnStatus(transaction.getStatus()))
-                .build();
+        return toTransactionResponse(transaction, getRedirectUrlBasedOnStatus(transaction.getStatus()));
     }
 
     private String getRedirectUrlBasedOnStatus(TransactionStatus status) {
@@ -193,12 +191,12 @@ public class TransactionServiceImpl implements TransactionService {
 
     private TransactionResponse toTransactionResponse(Transaction transaction, String redirectUrl) {
         String packageName = Optional.ofNullable(transaction.getTestPackage())
-                                    .map(TestPackage::getName)
-                                    .orElse(null);
+                .map(TestPackage::getName)
+                .orElse(null);
 
         String bundleName = Optional.ofNullable(transaction.getBundle())
-                                    .map(Bundle::getName)
-                                    .orElse(null);
+                .map(Bundle::getName)
+                .orElse(null);
 
         return TransactionResponse.builder()
                 .orderId(transaction.getMidtransOrderId())
@@ -211,57 +209,59 @@ public class TransactionServiceImpl implements TransactionService {
                 .build();
     }
 
-
     @Override
     @Transactional(readOnly = true)
     public List<TransactionDetailResponse> getTransactionsByUserId(String userId) {
-    
-     String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
-     User currentUser = userService.getByEmail(currentUserEmail);
-    
-     if (!currentUser.getId().toString().equals(userId) && 
-         !currentUser.getRole().getName().equals("ROLE_ADMIN")) {
-         throw new ResponseStatusException(HttpStatus.FORBIDDEN, 
-             "You don't have access to this transaction");
-     }
-     
-     
-     return transactionRepository.findByUserId(UUID.fromString(userId)).stream()
-             .map(this::mapToTransactionDetailResponse)
-             .collect(Collectors.toList());
- }
- 
- private TransactionDetailResponse mapToTransactionDetailResponse(Transaction transaction) {
-     return TransactionDetailResponse.builder()
-             .id(transaction.getId().toString())
-             .midtransOrderId(transaction.getMidtransOrderId())
-             .amount(transaction.getAmount())
-             .status(transaction.getStatus().name())
-             .createdAt(transaction.getCreatedAt())
-             .testPackage(transaction.getTestPackage() != null ? TestPackageResponse.builder()
-                     .id(transaction.getTestPackage().getId().toString())
-                     .name(transaction.getTestPackage().getName())
-                     .description(transaction.getTestPackage().getDescription())
-                     .price(transaction.getTestPackage().getPrice() != null
-                             ? transaction.getTestPackage().getPrice().doubleValue()
-                             : null)
-                     .discountPrice(transaction.getTestPackage().getDiscountPrice() != null
-                             ? transaction.getTestPackage().getDiscountPrice().doubleValue()
-                             : null)
-                     .build() : null)
-             .bundle(transaction.getBundle() != null ? BundleResponse.builder()
-                     .id(transaction.getBundle().getId())
-                     .name(transaction.getBundle().getName())
-                     .build() : null)
-             .build();
- }
- 
- @Override
-public List<Transaction> getSuccessfulTransactionsByUserId(UUID userId) {
-    return transactionRepository.findByUserIdAndStatus(
-        userId, 
-        TransactionStatus.SUCCESS
-    );
-}
+
+        String currentUserEmail = SecurityContextHolder.getContext().getAuthentication().getName();
+        User currentUser = userService.getByEmail(currentUserEmail);
+
+        if (!currentUser.getId().toString().equals(userId) &&
+                !currentUser.getRole().getName().equals("ROLE_ADMIN")) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN,
+                    "You don't have access to this transaction");
+        }
+
+        return transactionRepository.findByUserId(UUID.fromString(userId)).stream()
+                .map(this::mapToTransactionDetailResponse)
+                .collect(Collectors.toList());
+    }
+
+    private TransactionDetailResponse mapToTransactionDetailResponse(Transaction transaction) {
+        return TransactionDetailResponse.builder()
+                .id(transaction.getId().toString())
+                .midtransOrderId(transaction.getMidtransOrderId())
+                .amount(transaction.getAmount())
+                .status(transaction.getStatus().name())
+                .createdAt(transaction.getCreatedAt())
+                .testPackage(transaction.getTestPackage() != null ? TestPackageResponse.builder()
+                        .id(transaction.getTestPackage().getId().toString())
+                        .name(transaction.getTestPackage().getName())
+                        .description(transaction.getTestPackage().getDescription())
+                        .price(transaction.getTestPackage().getPrice() != null
+                                ? transaction.getTestPackage().getPrice().doubleValue()
+                                : null)
+                        .discountPrice(transaction.getTestPackage().getDiscountPrice() != null
+                                ? transaction.getTestPackage().getDiscountPrice().doubleValue()
+                                : null)
+                        .build() : null)
+                .bundle(transaction.getBundle() != null ? BundleResponse.builder()
+                        .id(transaction.getBundle().getId())
+                        .name(transaction.getBundle().getName())
+                        .build() : null)
+                .build();
+    }
+
+    @Override
+    public List<Transaction> getSuccessfulTransactionsByUserId(UUID userId) {
+        return transactionRepository.findByUserIdAndStatus(
+                userId,
+                TransactionStatus.SUCCESS);
+    }
+
+    @Override
+    public List<Transaction> findAllByUser(User user) {
+        return transactionRepository.findAllByUser(user);
+    }
 
 }

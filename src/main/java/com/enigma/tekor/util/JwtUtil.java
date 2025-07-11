@@ -34,13 +34,6 @@ public class JwtUtil {
     
     private static final Logger log = LoggerFactory.getLogger(JwtUtil.class);
 
-    /**
-     * Generates a short-lived Access Token for a given user.
-     * This token is used to access protected resources.
-     *
-     * @param user The user for whom the token is generated.
-     * @return A JWT string representing the access token.
-     */
     public String generateAccessToken(User user) {
         Algorithm algorithm = Algorithm.HMAC256(jwtSecret.getBytes(StandardCharsets.UTF_8));
         
@@ -53,13 +46,6 @@ public class JwtUtil {
                 .sign(algorithm);
     }
 
-    /**
-     * Generates a long-lived Refresh Token for a given user.
-     * This token is used to obtain a new access token without requiring the user to log in again.
-     *
-     * @param user The user for whom the token is generated.
-     * @return A JWT string representing the refresh token.
-     */
     public String generateRefreshToken(User user) {
         Algorithm algorithm = Algorithm.HMAC256(jwtSecret.getBytes(StandardCharsets.UTF_8));
         return JWT.create()
@@ -70,14 +56,7 @@ public class JwtUtil {
                 .withClaim("username", user.getUsername())
                 .sign(algorithm);
     }
-    
-    /**
-     * Verifies a given JWT and extracts user information if the token is valid.
-     *
-     * @param token The JWT string to verify.
-     * @return A map containing the userId and role from the token claims.
-     * @throws JWTVerificationException if the token is invalid (e.g., expired, wrong signature).
-     */
+
     public Map<String, String> getUserInfoByToken(String token) {
         try {
             JWTVerifier verifier = getVerifier();
@@ -97,10 +76,6 @@ public class JwtUtil {
         }
     }
 
-    /**
-     * Creates a reusable JWTVerifier instance.
-     * @return A configured JWTVerifier instance.
-     */
     private JWTVerifier getVerifier() {
         Algorithm algorithm = Algorithm.HMAC256(jwtSecret.getBytes(StandardCharsets.UTF_8));
         return JWT.require(algorithm)
