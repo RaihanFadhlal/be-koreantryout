@@ -134,6 +134,9 @@ public class BundleServiceImpl implements BundleService {
     @Override
     public void delete(UUID id) {
         Bundle bundle = bundleRepository.findById(id).orElseThrow(() -> new NotFoundException("Bundle not found"));
+        if (transactionRepository.existsByBundleId(id)) {
+            throw new ConflictException("Cannot delete bundle that has been purchased");
+        }
         bundleRepository.delete(bundle);
     }
 }

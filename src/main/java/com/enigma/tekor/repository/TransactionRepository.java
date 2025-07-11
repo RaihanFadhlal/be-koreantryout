@@ -29,4 +29,5 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     List<Transaction> findByUserAndStatus(@Param("user") User user, @Param("status") TransactionStatus status);
     List<Transaction> findByUserIdAndStatus(UUID userId, TransactionStatus status);
     List<Transaction> findAllByUser(User user);
+    boolean existsByBundleId(UUID bundleId);
 }
