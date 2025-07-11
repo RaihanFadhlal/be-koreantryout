@@ -4,10 +4,15 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.enigma.tekor.exception.BadRequestException;
+import com.enigma.tekor.exception.FileStorageException;
+import com.enigma.tekor.exception.NotFoundException;
+import com.enigma.tekor.service.CloudinaryService;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
@@ -44,6 +49,7 @@ public class TestPackageServiceImpl implements TestPackageService {
     private final QuestionService questionService;
     private final BundleService bundleService;
     private final QuestionRepository questionRepository;
+    private final CloudinaryService cloudinaryService;
 
     @Override
 @Transactional(rollbackOn = Exception.class)
@@ -120,20 +126,48 @@ public TestPackage createTestPackageFromExcel(CreateTestPackageRequest request) 
 }
 
     @Override
+    @Transactional(rollbackOn = Exception.class)
     public TestPackageResponse update(String id, UpdateTestPackageRequest request) {
-        TestPackage testPackage = testPackageRepository.findById(UUID.fromString(id)).orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Test package not found"));
-        testPackage.setName(request.getName());
-        testPackage.setDescription(request.getDescription());
-        testPackage.setPrice(BigDecimal.valueOf(request.getPrice()));
-        testPackage.setDiscountPrice(BigDecimal.valueOf(request.getDiscountPrice()));
-        testPackageRepository.save(testPackage);
-        return TestPackageResponse.builder()
-                .id(String.valueOf(testPackage.getId()))
-                .name(testPackage.getName())
-                .description(testPackage.getDescription())
-                .price(testPackage.getPrice().doubleValue())
-                .discountPrice(testPackage.getDiscountPrice().doubleValue())
-                .build();
+        try {
+            TestPackage testPackage = testPackageRepository.findById(UUID.fromString(id))
+                    .orElseThrow(() -> new NotFoundException("Test package not found"));
+
+            testPackage.setName(request.getName());
+            testPackage.setDescription(request.getDescription());
+            testPackage.setPrice(BigDecimal.valueOf(request.getPrice()));
+            testPackage.setDiscountPrice(BigDecimal.valueOf(request.getDiscountPrice()));
+
+            if (request.getImage() != null && !request.getImage().isEmpty()) {
+                if (testPackage.getImageUrl() != null && !testPackage.getImageUrl().isEmpty()) {
+                    try {
+                        String publicId = cloudinaryService.extractPublicIdFromUrl(testPackage.getImageUrl());
+                        cloudinaryService.delete(publicId);
+                    } catch (Exception e) {
+                        throw new FileStorageException("Failed to delete existing image from Cloudinary", e);
+                    }
+                }
+                try {
+                    Map<?, ?> uploadResult = cloudinaryService.upload(request.getImage());
+                    String newImageUrl = (String) uploadResult.get("secure_url");
+                    testPackage.setImageUrl(newImageUrl);
+                } catch (Exception e) {
+                    throw new FileStorageException("Failed to upload new image to Cloudinary", e);
+                }
+            }
+
+            testPackageRepository.save(testPackage);
+
+            return TestPackageResponse.builder()
+                    .id(String.valueOf(testPackage.getId()))
+                    .name(testPackage.getName())
+                    .description(testPackage.getDescription())
+                    .imageUrl(testPackage.getImageUrl())
+                    .price(testPackage.getPrice().doubleValue())
+                    .discountPrice(testPackage.getDiscountPrice().doubleValue())
+                    .build();
+        } catch (IllegalArgumentException e) {
+            throw new BadRequestException("Invalid UUID format for id: " + id);
+        }
     }
 
     @Override
