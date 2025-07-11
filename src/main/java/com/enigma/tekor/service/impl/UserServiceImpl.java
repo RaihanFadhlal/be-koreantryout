@@ -187,6 +187,7 @@ public class UserServiceImpl implements UserService {
         Page<User> users = userRepository.findAll(specification, pageable);
         return users.map(user -> UserResponse.builder()
                 .id(user.getId())
+                .fullName(user.getFullName())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .build());
