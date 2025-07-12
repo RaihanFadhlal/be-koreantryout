@@ -54,6 +54,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/vocabularies/**").permitAll()
                         .requestMatchers("/api/v1/test-attempts/**").hasRole("USER")
                         .requestMatchers("/api/v1/ai-evaluations/**").hasRole("USER")
+                        .requestMatchers("/api/v1/download/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

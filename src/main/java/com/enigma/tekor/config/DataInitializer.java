@@ -102,22 +102,32 @@ public class DataInitializer implements CommandLineRunner {
 
     private List<TestPackage> createDummyTestPackage() {
         try {
-            ClassPathResource resource = new ClassPathResource("Question-Tekor.xlsx");
-            MultipartFile multipartFile = new MockMultipartFile(
-                    "file",
-                    resource.getFilename(),
+            // Paket A
+            ClassPathResource resourceA = new ClassPathResource("Question-Tekor.xlsx");
+            MultipartFile multipartFileA = new MockMultipartFile(
+                    "fileA",
+                    resourceA.getFilename(),
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    resource.getInputStream()
+                    resourceA.getInputStream()
             );
 
-            CreateTestPackageRequest request = CreateTestPackageRequest.builder()
+            CreateTestPackageRequest requestA = CreateTestPackageRequest.builder()
                     .name("Paket Test A")
                     .description("Paket A try out tes bahasa korea berisi 20 soal Reading dan 20 soal Listening")
                     .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751525227/A_c3jx1r.jpg")
                     .price(new BigDecimal("100000"))
                     .discountPrice(new BigDecimal("29900"))
-                    .file(multipartFile)
+                    .file(multipartFileA)
                     .build();
+
+            // Paket B
+            ClassPathResource resourceB = new ClassPathResource("Question-Tekor-2.xlsx");
+            MultipartFile multipartFileB = new MockMultipartFile(
+                    "fileB",
+                    resourceB.getFilename(),
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    resourceB.getInputStream()
+            );
 
             CreateTestPackageRequest requestB = CreateTestPackageRequest.builder()
                     .name("Paket Test B")
@@ -125,10 +135,10 @@ public class DataInitializer implements CommandLineRunner {
                     .imageUrl("https://res.cloudinary.com/de7fcoe98/image/upload/v1751525227/B_z8vwmp.jpg")
                     .price(new BigDecimal("100000"))
                     .discountPrice(new BigDecimal("29900"))
-                    .file(multipartFile)
+                    .file(multipartFileB)
                     .build();
 
-            TestPackage packageA = testPackageService.createTestPackageFromExcel(request);
+            TestPackage packageA = testPackageService.createTestPackageFromExcel(requestA);
             TestPackage packageB = testPackageService.createTestPackageFromExcel(requestB);
             return List.of(packageA, packageB);
         } catch (IOException e) {
