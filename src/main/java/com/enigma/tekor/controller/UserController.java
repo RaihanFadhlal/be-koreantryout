@@ -3,6 +3,7 @@ package com.enigma.tekor.controller;
 import java.util.List;
 import java.util.UUID;
 
+import com.enigma.tekor.dto.response.*;
 import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -23,11 +24,6 @@ import org.springframework.web.multipart.MultipartFile;
 import com.enigma.tekor.dto.request.ChangePasswordRequest;
 import com.enigma.tekor.dto.request.SearchUserRequest;
 import com.enigma.tekor.dto.request.UpdateProfileRequest;
-import com.enigma.tekor.dto.response.AdminUserDetailResponse;
-import com.enigma.tekor.dto.response.CommonResponse;
-import com.enigma.tekor.dto.response.ProfilePictureResponse;
-import com.enigma.tekor.dto.response.ProfileResponse;
-import com.enigma.tekor.dto.response.UserResponse;
 import com.enigma.tekor.service.UserService;
 import com.enigma.tekor.util.JwtUtil;
 
@@ -109,7 +105,7 @@ public class UserController {
 
         @GetMapping("/all")
         @PreAuthorize("hasRole('ADMIN')")
-        public ResponseEntity<CommonResponse<List<UserResponse>>> getAllUsers(
+        public ResponseEntity<CommonResponse<PageResponse<UserResponse>>> getAllUsers(
                 @RequestParam(name = "page", defaultValue = "1") Integer page,
                 @RequestParam(name = "size", defaultValue = "10") Integer size,
                 @RequestParam(name = "username", required = false) String username
@@ -120,11 +116,18 @@ public class UserController {
                         .username(username)
                         .build();
                 Page<UserResponse> users = userService.getAllUsers(request);
-                return ResponseEntity.ok(CommonResponse.<List<UserResponse>>builder()
-                                .status(HttpStatus.OK.getReasonPhrase())
-                                .message("Successfully retrieved all users")
-                                .data(users.getContent())
-                                .build());
+                return ResponseEntity.ok(CommonResponse.<PageResponse<UserResponse>>builder()
+                        .status(HttpStatus.OK.getReasonPhrase())
+                        .message("Successfully retrieved all users")
+                        .data(PageResponse.<UserResponse>builder()
+                                .content(users.getContent())
+                                .currentPage(users.getNumber() + 1)
+                                .totalPages(users.getTotalPages())
+                                .totalElements(users.getTotalElements())
+                                .size(users.getSize())
+                                .build())
+                        .build());
+
         }
 
         @GetMapping("/{id}")
