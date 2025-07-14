@@ -20,8 +20,8 @@ COPY .mvn/ .mvn/
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.m2 so that subsequent builds don't have to
 # re-download packages.
-RUN --mount=type=bind,source=pom.xml,target=pom.xml \
-    --mount=type=cache,target=/root/.m2,id=maven-cache ./mvnw dependency:go-offline -DskipTests
+COPY pom.xml pom.xml
+RUN --mount=type=cache,target=/root/.m2,id=maven-cache ./mvnw dependency:go-offline -DskipTests
 
 ################################################################################
 
@@ -35,12 +35,13 @@ FROM deps as package
 
 WORKDIR /build
 
+COPY pom.xml pom.xml
 COPY ./src src/
-RUN --mount=type=bind,source=pom.xml,target=pom.xml \
-    --mount=type=cache,target=/root/.m2,id=maven-cache \
+
+RUN --mount=type=cache,target=/root/.m2,id=maven-cache \
     ./mvnw package -DskipTests && \
     mv target/$(./mvnw help:evaluate -Dexpression=project.artifactId -q -DforceStdout)-$(./mvnw help:evaluate -Dexpression=project.version -q -DforceStdout).jar target/app.jar
-    
+
 ################################################################################
 
 # Create a stage for extracting the application into separate layers.
