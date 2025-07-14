@@ -13,4 +13,5 @@ import java.util.UUID;
 @Repository
 public interface VocabularyRepository extends JpaRepository<Vocabulary, UUID> {
     Page<Vocabulary> findByVocabularyCategories(VocabularyCategories category, Pageable pageable);
+    Boolean existsByKoreanWord(String koreanWord);
 }

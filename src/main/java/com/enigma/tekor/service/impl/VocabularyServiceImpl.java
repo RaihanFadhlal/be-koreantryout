@@ -64,8 +64,9 @@ public class VocabularyServiceImpl implements VocabularyService {
 
             for (Row row : sheet) {
                 if (row.getRowNum() == 0) continue;
-
                 String koreanWord = getCellValue(row.getCell(0));
+                if (vocabularyRepository.existsByKoreanWord(koreanWord.trim())) continue;
+
                 String translation = getCellValue(row.getCell(1));
                 String romanization = getCellValue(row.getCell(2));
                 String categoryStr = getCellValue(row.getCell(3));
