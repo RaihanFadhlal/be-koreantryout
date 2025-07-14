@@ -31,3 +31,11 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environtment ###
+.env
+
+### GEMINI.md ###
+GEMINI.md
+
+ngrok.exe
