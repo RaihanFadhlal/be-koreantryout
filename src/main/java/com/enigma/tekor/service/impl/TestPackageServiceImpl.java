@@ -52,78 +52,77 @@ public class TestPackageServiceImpl implements TestPackageService {
     private final CloudinaryService cloudinaryService;
 
     @Override
-@Transactional(rollbackOn = Exception.class)
-public TestPackage createTestPackageFromExcel(CreateTestPackageRequest request) {
-    List<Question> questionsForPackage = new ArrayList<>();
+    @Transactional(rollbackOn = Exception.class)
+    public TestPackage createTestPackageFromExcel(CreateTestPackageRequest request) {
+        List<Question> questionsForPackage = new ArrayList<>();
 
-    try (Workbook workbook = new XSSFWorkbook(request.getFile().getInputStream())) {
-        Sheet sheet = workbook.getSheetAt(0);
-        Integer number = 1;
-        for (Row row : sheet) {
-            if (row.getRowNum() == 0) continue; 
+        try (Workbook workbook = new XSSFWorkbook(request.getFile().getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            Integer number = 1;
+            for (Row row : sheet) {
+                if (row.getRowNum() == 0) continue;
 
-            
-            if (isRowEmpty(row)) {
-                continue;
+                if (isRowEmpty(row)) {
+                    continue;
+                }
+
+                String questionText = getCellValue(row.getCell(0));
+
+                if (questionText == null || questionText.trim().isEmpty()) {
+                    questionText = " ";
+                }
+
+                try {
+                    QuestionType questionType = QuestionType.valueOf(getCellValue(row.getCell(1)).trim().toUpperCase());
+                    String imageUrl = getCellValue(row.getCell(2));
+                    String audioUrl = getCellValue(row.getCell(3));
+                    String option1 = getCellValue(row.getCell(4));
+                    String option2 = getCellValue(row.getCell(5));
+                    String option3 = getCellValue(row.getCell(6));
+                    String option4 = getCellValue(row.getCell(7));
+                    String correctOption = getCellValue(row.getCell(8));
+                    String desc = getCellValue(row.getCell(9));
+
+                    List<String> options = new ArrayList<>();
+                    options.add(option1);
+                    options.add(option2);
+                    options.add(option3);
+                    options.add(option4);
+
+                    CreateQuestionRequest questionRequest = new CreateQuestionRequest(
+                            questionText,
+                            desc,
+                            questionType,
+                            imageUrl,
+                            audioUrl,
+                            number,
+                            options,
+                            correctOption
+                    );
+
+                    Question savedQuestion = questionService.createQuestionWithOptions(questionRequest);
+                    questionsForPackage.add(savedQuestion);
+                    number++;
+                } catch (Exception e) {
+                    System.err.println("Error processing row " + (row.getRowNum() + 1) + ": " + e.getMessage());
+                    continue;
+                }
             }
-
-            String questionText = getCellValue(row.getCell(0));
-          
-            if (questionText == null || questionText.trim().isEmpty()) {
-                questionText = " ";
-            }
-            
-            try {
-                QuestionType questionType = QuestionType.valueOf(getCellValue(row.getCell(1)).trim().toUpperCase());
-                String imageUrl = getCellValue(row.getCell(2));
-                String audioUrl = getCellValue(row.getCell(3));
-                String option1 = getCellValue(row.getCell(4));
-                String option2 = getCellValue(row.getCell(5));
-                String option3 = getCellValue(row.getCell(6));
-                String option4 = getCellValue(row.getCell(7));
-                String correctOption = getCellValue(row.getCell(8));
-                String desc = getCellValue(row.getCell(9));
-
-                List<String> options = new ArrayList<>();
-                options.add(option1);
-                options.add(option2);
-                options.add(option3);
-                options.add(option4);
-
-                CreateQuestionRequest questionRequest = new CreateQuestionRequest(
-                        questionText,
-                        desc,
-                        questionType,
-                        imageUrl,
-                        audioUrl,
-                        number,
-                        options,
-                        correctOption
-                );
-
-                Question savedQuestion = questionService.createQuestionWithOptions(questionRequest);
-                questionsForPackage.add(savedQuestion);
-                number++;
-            } catch (Exception e) {
-                System.err.println("Error processing row " + (row.getRowNum() + 1) + ": " + e.getMessage());
-                continue;
-            }
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse Excel file: " + e.getMessage());
         }
-    } catch (IOException e) {
-        throw new RuntimeException("Failed to parse Excel file: " + e.getMessage());
+
+        TestPackage testPackage = new TestPackage();
+        testPackage.setName(request.getName());
+        testPackage.setDescription(request.getDescription());
+        testPackage.setImageUrl(request.getImageUrl());
+        testPackage.setPrice(request.getPrice());
+        testPackage.setDiscountPrice(request.getDiscountPrice());
+        testPackage.setIsTrial(request.getPrice().compareTo(BigDecimal.ZERO) <= 0);
+        testPackage.setQuestions(questionsForPackage);
+
+        return testPackageRepository.save(testPackage);
     }
-
-    TestPackage testPackage = new TestPackage();
-    testPackage.setName(request.getName());
-    testPackage.setDescription(request.getDescription());
-    testPackage.setImageUrl(request.getImageUrl());
-    testPackage.setPrice(request.getPrice());
-    testPackage.setDiscountPrice(request.getDiscountPrice());
-    testPackage.setIsTrial(request.getPrice().compareTo(BigDecimal.ZERO) <= 0);
-    testPackage.setQuestions(questionsForPackage);
-
-    return testPackageRepository.save(testPackage);
-}
 
     @Override
     @Transactional(rollbackOn = Exception.class)
@@ -268,8 +267,8 @@ public TestPackage createTestPackageFromExcel(CreateTestPackageRequest request) 
         }
         for (int cellNum = row.getFirstCellNum(); cellNum < row.getLastCellNum(); cellNum++) {
             Cell cell = row.getCell(cellNum);
-            if (cell != null && cell.getCellType() != CellType.BLANK && 
-                !cell.toString().trim().isEmpty()) {
+            if (cell != null && cell.getCellType() != CellType.BLANK &&
+                    !cell.toString().trim().isEmpty()) {
                 return false;
             }
         }
