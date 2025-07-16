@@ -9,7 +9,6 @@ import com.enigma.tekor.dto.response.TestAttemptResponse;
 import com.enigma.tekor.dto.response.UserTestAttemptResponse;
 import com.enigma.tekor.dto.response.TestAttemptReviewResponse;
 import com.enigma.tekor.entity.TestAttempt;
-import com.enigma.tekor.entity.Transaction;
 
 import reactor.core.publisher.Mono;
 

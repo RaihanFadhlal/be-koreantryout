@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -34,7 +35,6 @@ import com.enigma.tekor.service.TestPackageService;
 import com.enigma.tekor.service.TransactionService;
 import com.enigma.tekor.service.UserService;
 import com.midtrans.service.MidtransCoreApi;
-import org.springframework.context.annotation.Lazy;
 
 @Service
 public class TransactionServiceImpl implements TransactionService {
